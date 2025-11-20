@@ -1,0 +1,41 @@
+# 默认排除所有文件和目录
+/*
+
+# 必须纳入版本控制的顶层文件
+!.gitignore
+!README.md
+!pyproject.toml
+
+# 保留的源代码及脚本目录
+!benort/
+!benort/**
+!scripts/
+!scripts/**
+!temps/
+!temps/**
+!tools/
+!tools/**
+
+# 重新排除各类构建/运行时产物
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+venv/
+.venv/
+.env/
+.env
+.env.*
+build/
+dist/
+*.egg-info/
+node_modules/
+flask.log
+flask.log.*
+flask.pid
+server.info
+.DS_Store
+.idea/
+.vscode/

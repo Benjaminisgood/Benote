@@ -1,0 +1,38 @@
+header: |
+  \documentclass[12pt]{report}
+  \usepackage{geometry}
+  \geometry{a4paper,margin=1in}
+  \usepackage{graphicx}
+  \usepackage{hyperref}
+  \usepackage{booktabs}
+  \usepackage{amsmath, amssymb}
+  \usepackage{setspace}
+  \usepackage{fontspec}
+  \usepackage{mwe}
+  \usepackage{xeCJK}
+  \setCJKmainfont{PingFang SC}
+  \setsansfont{PingFang SC}
+  \setmainfont{PingFang SC}
+  \graphicspath{{.}{images/}{../images/}{../attachments/}{../}}
+  \makeatletter
+  \newcommand{\img}[2][]{
+    \IfFileExists{#2}{\includegraphics[#1]{#2}}{
+      \typeout{[warn] Missing image #2, using placeholder}
+      \includegraphics[#1]{example-image}
+    }
+  }
+  \makeatother
+  \usepackage[backend=bibtex,style=chem-acs,maxnames=6,giveninits=true,articletitle=true]{biblatex}
+  \addbibresource{refs.bib}
+  \onehalfspacing
+  \title{Report Title}
+  \author{Ben}
+  \date{\today}
+beforePages: |-
+  \begin{document}
+  \maketitle
+  \tableofcontents
+  
+footer: |-
+  \printbibliography
+  \end{document}

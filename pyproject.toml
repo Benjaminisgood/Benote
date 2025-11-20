@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["benort"]
+
+[project]
+name = "benort"
+version = "0.1.0"
+description = "Beamer AI 演讲稿编辑平台"
+requires-python = ">=3.11"
+dependencies = [
+    "flask==3.0.2",
+    "openai==1.35.0",
+    "python-dotenv==1.0.1",
+    "werkzeug==3.0.1",
+    "gunicorn==21.2.0",
+    "requests==2.31.0",
+    "pyyaml==6.0.1",
+    "ruamel.yaml==0.18.15",
+    "oss2==2.18.6",
+    "markdown-it-py==3.0.0",
+    "mdit-py-plugins==0.4.0",
+    "beautifulsoup4==4.12.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4,<9",
+]
+pdf-preview = [
+    "pdf2image>=1.17.0",
+    "pillow>=10.0.0",
+]
