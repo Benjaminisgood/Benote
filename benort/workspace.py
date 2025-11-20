@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 import threading
@@ -63,6 +64,7 @@ _LOCK = threading.RLock()
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _PORTABLE_HANDLE_ID: Optional[str] = None
 _PORTABLE_ERROR: Optional[str] = None
+_SHARED_REGISTRY_DIR = Path(tempfile.gettempdir()) / "benort_workspace_registry"
 
 
 def _ensure_suffix(path: str) -> str:
@@ -104,6 +106,107 @@ def _default_local_workspace_dir() -> Path:
 
 def _resolve_local_search_dir(base_dir: Optional[str]) -> Path:
     return _default_local_workspace_dir()
+
+
+def _shared_registry_path(workspace_id: str) -> Path:
+    safe = secure_filename(workspace_id) or "workspace"
+    return _SHARED_REGISTRY_DIR / f"{safe}.json"
+
+
+def _persist_workspace_record(handle: WorkspaceHandle) -> None:
+    payload = {
+        "workspace_id": handle.workspace_id,
+        "mode": handle.mode,
+        "display_name": handle.display_name,
+        "source": handle.source,
+        "local_path": handle.local_path,
+        "remote_key": handle.remote_key,
+        "locked": handle.locked,
+        "unlocked": handle.unlocked,
+    }
+    try:
+        _SHARED_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        path = _shared_registry_path(handle.workspace_id)
+        temp_path = path.with_suffix(".tmp")
+        with temp_path.open("w", encoding="utf-8") as fp:
+            json.dump(payload, fp)
+        temp_path.replace(path)
+    except Exception:
+        # Registry persistence is best-effort; ignore if the temp dir is unavailable.
+        pass
+
+
+def _load_workspace_record(workspace_id: str) -> Optional[dict]:
+    path = _shared_registry_path(workspace_id)
+    try:
+        with path.open("r", encoding="utf-8") as fp:
+            payload = json.load(fp)
+        if isinstance(payload, dict):
+            return payload
+    except Exception:
+        return None
+    return None
+
+
+def _remove_workspace_record(workspace_id: str) -> None:
+    path = _shared_registry_path(workspace_id)
+    try:
+        path.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def _recover_workspace(workspace_id: str) -> WorkspaceHandle:
+    """Re-open a workspace in the current process using the shared registry."""
+
+    record = _load_workspace_record(workspace_id)
+    if not record:
+        raise WorkspaceNotFoundError(workspace_id)
+
+    mode = record.get("mode") or "local"
+    if mode == "cloud":
+        remote_key = record.get("remote_key") or record.get("source")
+        if not remote_key:
+            raise WorkspaceNotFoundError(workspace_id)
+        local_hint = record.get("local_path") or ""
+        temp_path = Path(local_hint) if local_hint else Path(_remote_tempfile(remote_key))
+        try:
+            if not temp_path.exists():
+                download_workspace_package(remote_key, str(temp_path))
+        except Exception:
+            temp_path = Path(_remote_tempfile(remote_key))
+            download_workspace_package(remote_key, str(temp_path))
+        package = BenortPackage(str(temp_path))
+        handle = WorkspaceHandle(
+            workspace_id=workspace_id,
+            mode="cloud",
+            display_name=record.get("display_name") or Path(remote_key).stem,
+            source=remote_key,
+            local_path=str(temp_path),
+            package=package,
+            remote_key=remote_key,
+        )
+    else:
+        local_path = record.get("local_path") or record.get("source")
+        if not local_path:
+            raise WorkspaceNotFoundError(workspace_id)
+        normalized = Path(_ensure_suffix(local_path)).expanduser().resolve()
+        if not normalized.exists():
+            raise WorkspaceNotFoundError(workspace_id)
+        package = BenortPackage(str(normalized))
+        handle = WorkspaceHandle(
+            workspace_id=workspace_id,
+            mode="local",
+            source=str(normalized),
+            local_path=str(normalized),
+            display_name=record.get("display_name") or _derive_display_name(normalized),
+            package=package,
+        )
+
+    handle.locked = bool(record.get("locked"))
+    handle.unlocked = bool(record.get("unlocked", True))
+    _refresh_handle_security(handle, preserve_unlock=True)
+    return handle
 
 
 def discover_local_workspaces(
@@ -167,6 +270,7 @@ def _remote_tempfile(name: str) -> str:
 def _register(handle: WorkspaceHandle) -> WorkspaceHandle:
     with _LOCK:
         _REGISTRY[handle.workspace_id] = handle
+    _persist_workspace_record(handle)
     return handle
 
 
@@ -286,6 +390,7 @@ def sync_remote_workspace(handle: WorkspaceHandle) -> None:
 
 
 def close_workspace(workspace_id: str) -> None:
+    _remove_workspace_record(workspace_id)
     with _LOCK:
         handle = _REGISTRY.pop(workspace_id, None)
     global _PORTABLE_HANDLE_ID
@@ -305,7 +410,11 @@ def get_workspace(workspace_id: str) -> WorkspaceHandle:
     with _LOCK:
         handle = _REGISTRY.get(workspace_id)
     if not handle:
-        raise WorkspaceNotFoundError(workspace_id)
+        try:
+            recovered = _recover_workspace(workspace_id)
+        except WorkspaceNotFoundError:
+            raise
+        return _register(recovered)
     return handle
 
 
