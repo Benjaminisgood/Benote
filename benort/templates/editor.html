@@ -4056,13 +4056,21 @@ function jumpToPage(targetIdx) {
     });
   }
   let llmProviders = Array.isArray(window.BENORT_LLM_PROVIDERS) ? window.BENORT_LLM_PROVIDERS.slice() : [];
-  if(!llmProviders.length){
-    // 后端列表异常时的兜底，至少给出两个常用提供方
-    llmProviders = [
-      {id: 'openai', label: 'OpenAI', models: ['gpt-4o'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large', 'text-embedding-3-small'], ttsModels: ['tts-1']},
-      {id: 'chatanywhere', label: 'ChatAnywhere', models: ['gpt-4o'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large'], ttsModels: ['tts-1']},
+  function ensureDefaultProviders(){
+    const idSet = new Set((llmProviders || []).map(p => (p && typeof p.id === 'string') ? p.id.toLowerCase() : ''));
+    const defaults = [
+      {id: 'openai', label: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large', 'text-embedding-3-small'], ttsModels: ['tts-1', 'tts-1-hd']},
+      {id: 'chatanywhere', label: 'ChatAnywhere', models: ['gpt-4o'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large', 'text-embedding-3-small'], ttsModels: ['tts-1']},
+      {id: 'mock-local', label: 'Mock Local', models: ['gpt-4o'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large', 'text-embedding-3-small'], ttsModels: ['tts-1']},
     ];
+    defaults.forEach(p => {
+      if(!idSet.has(p.id)){
+        llmProviders.push(p);
+        idSet.add(p.id);
+      }
+    });
   }
+  ensureDefaultProviders();
   const llmDefaultState = (window.BENORT_LLM_DEFAULT && typeof window.BENORT_LLM_DEFAULT === 'object') ? {...window.BENORT_LLM_DEFAULT} : {};
   let llmSettings = {};
   const llmManageBtn = document.getElementById('llm-manage-btn');

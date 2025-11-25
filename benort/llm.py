@@ -179,6 +179,59 @@ def list_llm_providers() -> List[Dict[str, Any]]:
             "hasApiKey": bool(api_key_env and os.environ.get(str(api_key_env))),
         }
         providers.append(entry)
+    if not providers:
+        providers.extend(
+            [
+                {
+                    "id": "openai",
+                    "label": "OpenAI",
+                    "defaultModel": "gpt-4o",
+                    "defaultEmbeddingModel": "text-embedding-3-large",
+                    "defaultTtsModel": "tts-1",
+                    "models": ["gpt-4o", "gpt-4o-mini"],
+                    "embeddingModels": ["text-embedding-3-large", "text-embedding-3-small"],
+                    "ttsModels": ["tts-1", "tts-1-hd"],
+                    "baseUrl": os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1"),
+                    "chatPath": os.environ.get("OPENAI_CHAT_PATH", "/chat/completions"),
+                    "embeddingPath": os.environ.get("LLM_EMBEDDING_PATH", "/embeddings"),
+                    "ttsPath": os.environ.get("LLM_TTS_PATH", "/audio/speech"),
+                    "apiKeyEnv": "OPENAI_API_KEY",
+                    "hasApiKey": bool(os.environ.get("OPENAI_API_KEY")),
+                },
+                {
+                    "id": "chatanywhere",
+                    "label": "ChatAnywhere",
+                    "defaultModel": os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-4o"),
+                    "defaultEmbeddingModel": os.environ.get("CHAT_ANYWHERE_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL),
+                    "defaultTtsModel": os.environ.get("CHAT_ANYWHERE_TTS_MODEL", DEFAULT_TTS_MODEL),
+                    "models": [os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-4o")],
+                    "embeddingModels": [os.environ.get("CHAT_ANYWHERE_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL)],
+                    "ttsModels": [os.environ.get("CHAT_ANYWHERE_TTS_MODEL", DEFAULT_TTS_MODEL)],
+                    "baseUrl": os.environ.get("CHAT_ANYWHERE_BASE_URL", "https://api.chatanywhere.tech/v1"),
+                    "chatPath": os.environ.get("CHAT_ANYWHERE_CHAT_PATH", "/chat/completions"),
+                    "embeddingPath": os.environ.get("CHAT_ANYWHERE_EMBEDDING_PATH", "/embeddings"),
+                    "ttsPath": os.environ.get("CHAT_ANYWHERE_TTS_PATH", "/audio/speech"),
+                    "apiKeyEnv": "CHAT_ANYWHERE_API_KEY",
+                    "hasApiKey": bool(os.environ.get("CHAT_ANYWHERE_API_KEY")),
+                },
+                {
+                    "id": "mock-local",
+                    "label": "Mock Local",
+                    "defaultModel": os.environ.get("MOCK_LLM_CHAT_MODEL", "gpt-4o"),
+                    "defaultEmbeddingModel": os.environ.get("MOCK_LLM_EMBEDDING_MODEL", "text-embedding-3-large"),
+                    "defaultTtsModel": os.environ.get("MOCK_LLM_TTS_MODEL", "tts-1"),
+                    "models": ["gpt-4o", "gpt-4o-mini"],
+                    "embeddingModels": ["text-embedding-3-large", "text-embedding-3-small"],
+                    "ttsModels": ["tts-1"],
+                    "baseUrl": os.environ.get("MOCK_LLM_BASE_URL", "http://localhost:8000/v1"),
+                    "chatPath": os.environ.get("MOCK_LLM_CHAT_PATH", "/chat/completions"),
+                    "embeddingPath": os.environ.get("MOCK_LLM_EMBEDDING_PATH", "/embeddings"),
+                    "ttsPath": os.environ.get("MOCK_LLM_TTS_PATH", "/audio/speech"),
+                    "apiKeyEnv": os.environ.get("MOCK_LLM_API_KEY_ENV", "MOCK_LLM_API_KEY"),
+                    "hasApiKey": bool(os.environ.get(os.environ.get("MOCK_LLM_API_KEY_ENV", "MOCK_LLM_API_KEY"))),
+                },
+            ]
+        )
     return providers
 
 
