@@ -4216,66 +4216,7 @@ function jumpToPage(targetIdx) {
 
   function renderLlmModalProviders(){
     if(!llmModalProviderList) return;
-    llmModalProviderList.innerHTML = '';
-    if(!llmProviders.length){
-      llmModalProviderList.innerHTML = '<div class="text-muted small">暂无可用提供方。</div>';
-      return;
-    }
-    const active = (typeof llmSettings.chatProvider === 'string' && llmSettings.chatProvider.trim()) ? llmSettings.chatProvider.trim().toLowerCase() : '';
-    llmProviders.forEach(provider => {
-      if(!provider || typeof provider.id !== 'string') return;
-      const wrapper = document.createElement('div');
-      wrapper.className = 'form-check';
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.className = 'form-check-input';
-      input.name = 'llm-modal-provider';
-      const inputId = `llm-provider-${provider.id}`;
-      input.id = inputId;
-      input.value = provider.id;
-      input.checked = provider.id.toLowerCase() === active;
-      input.addEventListener('change', () => {
-        if(!input.checked) return;
-        handleLlmProviderSelect(provider.id);
-        renderLlmModalModels();
-        renderLlmProviderSelect(llmChatProviderSelect, llmSettings.chatProvider);
-        updateLlmModalMeta();
-        clearLlmTestResult();
-      });
-      const label = document.createElement('label');
-      label.className = 'form-check-label d-flex justify-content-between align-items-center';
-      label.setAttribute('for', inputId);
-      const left = document.createElement('span');
-      left.textContent = provider.label || provider.id;
-      label.appendChild(left);
-      const infoRow = document.createElement('span');
-      infoRow.className = 'small ms-3 text-muted d-flex align-items-center gap-2';
-      const defaultModel = (typeof provider.defaultModel === 'string' && provider.defaultModel.trim()) ? provider.defaultModel.trim()
-        : (Array.isArray(provider.models) && provider.models.length > 0 && typeof provider.models[0] === 'string' ? provider.models[0] : '');
-      if(defaultModel){
-        const modelBadge = document.createElement('span');
-        modelBadge.className = 'llm-provider-chip';
-        modelBadge.textContent = defaultModel;
-        infoRow.appendChild(modelBadge);
-      }
-      if(provider.hasApiKey){
-        const statusBadge = document.createElement('span');
-        statusBadge.className = 'badge llm-modal-provider-status bg-success';
-        statusBadge.textContent = '已配置';
-        infoRow.appendChild(statusBadge);
-      } else if(provider.apiKeyEnv){
-        const statusBadge = document.createElement('span');
-        statusBadge.className = 'badge llm-modal-provider-status bg-warning text-dark';
-        statusBadge.textContent = '未配置';
-        infoRow.appendChild(statusBadge);
-      }
-      if(infoRow.childElementCount > 0){
-        label.appendChild(infoRow);
-      }
-      wrapper.appendChild(input);
-      wrapper.appendChild(label);
-      llmModalProviderList.appendChild(wrapper);
-    });
+    llmModalProviderList.innerHTML = '<div class="text-muted small">请使用下方各折叠面板的“提供方”下拉选择。</div>';
   }
 
   function renderLlmProviderSelect(selectEl, activeId){

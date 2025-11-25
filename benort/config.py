@@ -317,6 +317,12 @@ DEFAULT_TTS_BASE_URL = os.environ.get("LLM_TTS_BASE_URL", OPENAI_API_BASE_URL)
 CHATANYWHERE_API_BASE_URL = os.environ.get("CHAT_ANYWHERE_BASE_URL", "https://api.chatanywhere.tech/v1")
 CHATANYWHERE_CHAT_PATH = os.environ.get("CHAT_ANYWHERE_CHAT_PATH", "/chat/completions")
 CHATANYWHERE_DEFAULT_MODEL = os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-4o")
+CHATANYWHERE_EMBEDDING_MODEL = os.environ.get("CHAT_ANYWHERE_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL)
+CHATANYWHERE_TTS_MODEL = os.environ.get("CHAT_ANYWHERE_TTS_MODEL", DEFAULT_TTS_MODEL)
+CHATANYWHERE_EMBEDDING_PATH = os.environ.get("CHAT_ANYWHERE_EMBEDDING_PATH", DEFAULT_EMBEDDING_PATH)
+CHATANYWHERE_TTS_PATH = os.environ.get("CHAT_ANYWHERE_TTS_PATH", DEFAULT_TTS_PATH)
+CHATANYWHERE_EMBEDDING_BASE_URL = os.environ.get("CHAT_ANYWHERE_EMBEDDING_BASE_URL", CHATANYWHERE_API_BASE_URL)
+CHATANYWHERE_TTS_BASE_URL = os.environ.get("CHAT_ANYWHERE_TTS_BASE_URL", CHATANYWHERE_API_BASE_URL)
 
 # 通用 LLM 提供方注册表，便于统一管理聊天模型调用
 LLM_PROVIDERS: dict[str, dict[str, object]] = {
@@ -359,22 +365,22 @@ LLM_PROVIDERS: dict[str, dict[str, object]] = {
         "label": "ChatAnywhere",
         "base_url": CHATANYWHERE_API_BASE_URL,
         "chat_path": CHATANYWHERE_CHAT_PATH,
-        "tts_path": DEFAULT_TTS_PATH,
-        "embedding_path": DEFAULT_EMBEDDING_PATH,
-        "embedding_base_url": CHATANYWHERE_API_BASE_URL,
-        "tts_base_url": CHATANYWHERE_API_BASE_URL,
+        "tts_path": CHATANYWHERE_TTS_PATH,
+        "embedding_path": CHATANYWHERE_EMBEDDING_PATH,
+        "embedding_base_url": CHATANYWHERE_EMBEDDING_BASE_URL,
+        "tts_base_url": CHATANYWHERE_TTS_BASE_URL,
         "default_model": CHATANYWHERE_DEFAULT_MODEL,
-        "default_embedding_model": DEFAULT_EMBEDDING_MODEL,
-        "default_tts_model": DEFAULT_TTS_MODEL,
+        "default_embedding_model": CHATANYWHERE_EMBEDDING_MODEL,
+        "default_tts_model": CHATANYWHERE_TTS_MODEL,
         "models": [
             CHATANYWHERE_DEFAULT_MODEL,
         ],
         "embedding_models": [
-            DEFAULT_EMBEDDING_MODEL,
+            CHATANYWHERE_EMBEDDING_MODEL,
             "text-embedding-3-small",
         ],
         "tts_models": [
-            DEFAULT_TTS_MODEL,
+            CHATANYWHERE_TTS_MODEL,
         ],
         "api_key_env": "CHAT_ANYWHERE_API_KEY",
         "api_key_header": "Authorization",
@@ -1132,6 +1138,10 @@ __all__ = [
     "DEFAULT_EMBEDDING_PATH",
     "DEFAULT_TTS_MODEL",
     "DEFAULT_TTS_PATH",
+    "CHATANYWHERE_EMBEDDING_MODEL",
+    "CHATANYWHERE_TTS_MODEL",
+    "CHATANYWHERE_EMBEDDING_PATH",
+    "CHATANYWHERE_TTS_PATH",
     "CHATANYWHERE_API_BASE_URL",
     "CHATANYWHERE_CHAT_PATH",
     "CHATANYWHERE_DEFAULT_MODEL",
