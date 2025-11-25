@@ -388,6 +388,36 @@ LLM_PROVIDERS: dict[str, dict[str, object]] = {
         "extra_headers": {},
         "timeout": 60,
     },
+    # 兜底/占位 provider，避免前端下拉空列表（可改成你自己的代理）
+    "mock-local": {
+        "id": "mock-local",
+        "label": "Mock Local",
+        "base_url": os.environ.get("MOCK_LLM_BASE_URL", "http://localhost:8000/v1"),
+        "chat_path": os.environ.get("MOCK_LLM_CHAT_PATH", "/chat/completions"),
+        "embedding_path": os.environ.get("MOCK_LLM_EMBEDDING_PATH", "/embeddings"),
+        "tts_path": os.environ.get("MOCK_LLM_TTS_PATH", "/audio/speech"),
+        "embedding_base_url": os.environ.get("MOCK_LLM_EMBEDDING_BASE_URL", os.environ.get("MOCK_LLM_BASE_URL", "http://localhost:8000/v1")),
+        "tts_base_url": os.environ.get("MOCK_LLM_TTS_BASE_URL", os.environ.get("MOCK_LLM_BASE_URL", "http://localhost:8000/v1")),
+        "default_model": os.environ.get("MOCK_LLM_CHAT_MODEL", "gpt-4o"),
+        "default_embedding_model": os.environ.get("MOCK_LLM_EMBEDDING_MODEL", "text-embedding-3-large"),
+        "default_tts_model": os.environ.get("MOCK_LLM_TTS_MODEL", "tts-1"),
+        "models": [
+            os.environ.get("MOCK_LLM_CHAT_MODEL", "gpt-4o"),
+            "gpt-4o-mini",
+        ],
+        "embedding_models": [
+            os.environ.get("MOCK_LLM_EMBEDDING_MODEL", "text-embedding-3-large"),
+            "text-embedding-3-small",
+        ],
+        "tts_models": [
+            os.environ.get("MOCK_LLM_TTS_MODEL", "tts-1"),
+        ],
+        "api_key_env": os.environ.get("MOCK_LLM_API_KEY_ENV", "MOCK_LLM_API_KEY"),
+        "api_key_header": "Authorization",
+        "api_key_prefix": "Bearer ",
+        "extra_headers": {},
+        "timeout": 30,
+    },
 }
 
 _ENV_DEFAULT_PROVIDER = (os.environ.get("LLM_PROVIDER") or "").strip().lower()

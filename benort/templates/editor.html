@@ -4055,7 +4055,14 @@ function jumpToPage(targetIdx) {
       createRemoteWorkspaceEntry(name, displayName);
     });
   }
-  const llmProviders = Array.isArray(window.BENORT_LLM_PROVIDERS) ? window.BENORT_LLM_PROVIDERS.slice() : [];
+  let llmProviders = Array.isArray(window.BENORT_LLM_PROVIDERS) ? window.BENORT_LLM_PROVIDERS.slice() : [];
+  if(!llmProviders.length){
+    // 后端列表异常时的兜底，至少给出两个常用提供方
+    llmProviders = [
+      {id: 'openai', label: 'OpenAI', models: ['gpt-4o'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large', 'text-embedding-3-small'], ttsModels: ['tts-1']},
+      {id: 'chatanywhere', label: 'ChatAnywhere', models: ['gpt-4o'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large'], ttsModels: ['tts-1']},
+    ];
+  }
   const llmDefaultState = (window.BENORT_LLM_DEFAULT && typeof window.BENORT_LLM_DEFAULT === 'object') ? {...window.BENORT_LLM_DEFAULT} : {};
   let llmSettings = {};
   const llmManageBtn = document.getElementById('llm-manage-btn');
@@ -4235,6 +4242,7 @@ function jumpToPage(targetIdx) {
     } else if(selectEl.options.length){
       selectEl.selectedIndex = 0;
     }
+    selectEl.disabled = selectEl.options.length === 0;
   }
 
   function renderLlmModalModels(){
