@@ -330,6 +330,44 @@
     body.theme-dark .learning-prompt-card__meta {
       color: #cbd5f5;
     }
+    .ai-assistant-answer {
+      min-height: 160px;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      padding: 0.75rem 0.9rem;
+      background: rgba(255, 255, 255, 0.9);
+      white-space: pre-wrap;
+      font-family: var(--bs-font-monospace);
+      line-height: 1.5;
+    }
+    body.theme-dark .ai-assistant-answer {
+      background: rgba(17, 24, 39, 0.9);
+      color: #e2e8f0;
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+    .ai-assistant-context {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      margin-bottom: 0.5rem;
+      background: rgba(241, 245, 249, 0.85);
+    }
+    body.theme-dark .ai-assistant-context {
+      background: rgba(30, 41, 59, 0.65);
+      border-color: rgba(148, 163, 184, 0.45);
+    }
+    .ai-assistant-context__title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .ai-assistant-context__meta {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 0.35rem;
+    }
+    body.theme-dark .ai-assistant-context__meta {
+      color: #cbd5e1;
+    }
     #editor-container,
     #pdf-container,
     #markdown-preview {
@@ -1148,6 +1186,7 @@
       body.mobile-compact #ai-note-optimize,
       body.mobile-compact #ai-script-optimize,
       body.mobile-compact #ai-learn-helper,
+      body.mobile-compact #ai-assistant-btn,
       body.mobile-compact #play-note,
       body.mobile-compact #edit-bib,
       body.mobile-compact #manage-resources,
@@ -1607,8 +1646,8 @@
         <li><hr class="dropdown-divider m-1"></li>
 
         <li class="nav-item">
-          <button class="btn btn-outline-primary me-2 js-nav-btn" id="llm-manage-btn" title="管理 LLM 设置">
-            LLM <span class="llm-provider-label ms-1" id="llm-provider-label">--</span>
+          <button class="btn btn-outline-primary me-2 js-nav-btn" id="llm-manage-btn" title="管理模型配置">
+            模型 <span class="llm-provider-label ms-1" id="llm-provider-label">--</span>
           </button>
         </li>
         <li><hr class="dropdown-divider m-1"></li>
@@ -1618,6 +1657,7 @@
         <li class="nav-item"><button class="btn btn-outline-secondary me-2 js-nav-btn" id="ai-script-optimize" title="Speech script优化">script优化</button></li>
         <li class="nav-item"><button class="btn btn-outline-success me-2 js-nav-btn" id="ai-learn-helper" title="AI 学习">AI学习</button></li>
         <li class="nav-item"><button class="btn btn-outline-info me-2 js-nav-btn" id="ai-learn-review-btn" title="AI 复习">AI复习</button></li>
+        <li class="nav-item"><button class="btn btn-outline-primary me-2 js-nav-btn" id="ai-assistant-btn" title="AI 助理（可选 RAG）">AI助理</button></li>
         <li><hr class="dropdown-divider m-1"></li>
         <li class="nav-item"><button class="btn btn-outline-danger me-2 js-nav-btn" id="play-note" title="播放当前页讲稿">播放讲稿</button></li>
         <li><hr class="dropdown-divider m-1"></li>
@@ -2055,6 +2095,51 @@
         </div>
       </div>
 
+      <div class="modal fade" id="aiAssistantModal" tabindex="-1" aria-labelledby="aiAssistantModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <div>
+                <h5 class="modal-title" id="aiAssistantModalLabel">AI 助理</h5>
+                <div class="text-muted small" id="ai-assistant-rag-hint">仅索引当前已解锁工作区的 Markdown 笔记，可随时关闭 RAG 直接对话。</div>
+              </div>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="ai-assistant-message" class="form-label">我的问题</label>
+                <textarea id="ai-assistant-message" class="form-control" rows="5" placeholder="输入要询问的问题，或粘贴需要总结/整理的内容"></textarea>
+              </div>
+              <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="ai-assistant-use-rag" checked>
+                  <label class="form-check-label" for="ai-assistant-use-rag">使用 RAG（Markdown 笔记）</label>
+                </div>
+                <div class="text-muted small" id="ai-assistant-status">准备就绪</div>
+              </div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <label class="form-label mb-0">回复</label>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="ai-assistant-copy">复制</button>
+                </div>
+                <div id="ai-assistant-answer" class="ai-assistant-answer"></div>
+              </div>
+              <div class="mb-2 d-flex justify-content-between align-items-center">
+                <div class="form-label mb-0">命中的上下文</div>
+                <span class="badge bg-info text-dark" id="ai-assistant-context-count">0</span>
+              </div>
+              <div class="text-muted small mb-2">仅索引 Markdown；若为空则自动回退为普通对话。</div>
+              <div id="ai-assistant-contexts"></div>
+            </div>
+            <div class="modal-footer">
+              <div class="text-muted small me-auto" id="ai-assistant-meta"></div>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+              <button type="button" class="btn btn-primary" id="ai-assistant-run">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Attachment Preview Modal -->
       <div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-labelledby="attachmentPreviewModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -2220,7 +2305,7 @@
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="llmModalLabel">LLM 源配置</h5>
+              <h5 class="modal-title" id="llmModalLabel">模型配置</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -2228,26 +2313,101 @@
                 <label class="form-label fw-semibold">选择提供方</label>
                 <div id="llm-modal-provider-list" class="d-flex flex-column gap-2"></div>
               </div>
-              <div class="mb-3">
-                <label class="form-label fw-semibold" for="llm-modal-model-select">模型</label>
-                <select class="form-select" id="llm-modal-model-select"></select>
-                <div class="form-text" id="llm-modal-model-hint">选择后将随项目保存，前端调用同一模型。</div>
-              </div>
-              <div class="mb-3 small">
-                <div>
-                  API Key 环境变量：
-                  <code id="llm-modal-api-env">--</code>
-                  <span class="badge bg-secondary ms-2" id="llm-modal-api-status">未检测</span>
+              <div class="accordion" id="llmConfigAccordion">
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingChat">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseChat" aria-expanded="true" aria-controls="collapseChat">
+                      聊天模型
+                    </button>
+                  </h2>
+                  <div id="collapseChat" class="accordion-collapse collapse show" aria-labelledby="headingChat" data-bs-parent="#llmConfigAccordion">
+                    <div class="accordion-body">
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold" for="llm-modal-provider-select-chat">提供方</label>
+                        <select class="form-select" id="llm-modal-provider-select-chat"></select>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold" for="llm-modal-model-select">模型</label>
+                        <select class="form-select" id="llm-modal-model-select"></select>
+                        <div class="form-text" id="llm-modal-model-hint">选择后将随项目保存，前端调用同一模型。</div>
+                      </div>
+                      <div class="mb-3 small">
+                        <div>
+                          API Key 环境变量：
+                          <code id="llm-modal-api-env">--</code>
+                          <span class="badge bg-secondary ms-2" id="llm-modal-api-status">未检测</span>
+                        </div>
+                        <div class="mt-1 text-muted" id="llm-modal-endpoint"></div>
+                      </div>
+                      <div class="surface-card p-2 small">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                          <button type="button" class="btn btn-outline-primary btn-sm" id="llm-modal-test-btn">连通性测试</button>
+                          <span class="flex-grow-1 text-muted" id="llm-modal-test-result"></span>
+                        </div>
+                        <div class="mt-2 text-muted">
+                          测试会发送最小化请求验证聊天接口可用性。
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="mt-1 text-muted" id="llm-modal-endpoint"></div>
-              </div>
-              <div class="surface-card p-2 small">
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                  <button type="button" class="btn btn-outline-primary btn-sm" id="llm-modal-test-btn">连通性测试</button>
-                  <span class="flex-grow-1 text-muted" id="llm-modal-test-result"></span>
+
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingEmbed">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEmbed" aria-expanded="false" aria-controls="collapseEmbed">
+                      Embedding
+                    </button>
+                  </h2>
+                  <div id="collapseEmbed" class="accordion-collapse collapse" aria-labelledby="headingEmbed" data-bs-parent="#llmConfigAccordion">
+                    <div class="accordion-body">
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold" for="llm-embed-provider">提供方</label>
+                        <select class="form-select" id="llm-embed-provider"></select>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold" for="llm-embed-model">Embedding 模型</label>
+                        <input type="text" class="form-control" id="llm-embed-model" list="llm-embed-model-options" placeholder="如 text-embedding-3-large">
+                        <datalist id="llm-embed-model-options"></datalist>
+                        <div class="form-text" id="llm-modal-embedding-hint">可选内置或自定义；留空则使用提供方默认 embedding。</div>
+                      </div>
+                      <div class="small mb-2" id="llm-embed-endpoint"></div>
+                      <div class="surface-card p-2 small">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                          <button type="button" class="btn btn-outline-primary btn-sm" id="llm-embed-test-btn">测试 Embedding</button>
+                          <span class="flex-grow-1 text-muted" id="llm-embed-test-result"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="mt-2 text-muted">
-                  测试会发送最小化请求（最多 2 个 token），用于验证当前密钥与接口是否可用。
+
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingTts">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTts" aria-expanded="false" aria-controls="collapseTts">
+                      TTS
+                    </button>
+                  </h2>
+                  <div id="collapseTts" class="accordion-collapse collapse" aria-labelledby="headingTts" data-bs-parent="#llmConfigAccordion">
+                    <div class="accordion-body">
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold" for="llm-tts-provider">提供方</label>
+                        <select class="form-select" id="llm-tts-provider"></select>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold" for="llm-tts-model">TTS 模型</label>
+                        <input type="text" class="form-control" id="llm-tts-model" list="llm-tts-model-options" placeholder="如 tts-1">
+                        <datalist id="llm-tts-model-options"></datalist>
+                        <div class="form-text" id="llm-modal-tts-hint">可选内置或自定义；留空则使用提供方默认 TTS。</div>
+                      </div>
+                      <div class="small mb-2" id="llm-tts-endpoint"></div>
+                      <div class="surface-card p-2 small">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                          <button type="button" class="btn btn-outline-primary btn-sm" id="llm-tts-test-btn">测试 TTS</button>
+                          <span class="flex-grow-1 text-muted" id="llm-tts-test-result"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3897,17 +4057,34 @@ function jumpToPage(targetIdx) {
   }
   const llmProviders = Array.isArray(window.BENORT_LLM_PROVIDERS) ? window.BENORT_LLM_PROVIDERS.slice() : [];
   const llmDefaultState = (window.BENORT_LLM_DEFAULT && typeof window.BENORT_LLM_DEFAULT === 'object') ? {...window.BENORT_LLM_DEFAULT} : {};
-  let llmSettings = (llmDefaultState && typeof llmDefaultState === 'object') ? {...llmDefaultState} : {};
+  let llmSettings = {};
   const llmManageBtn = document.getElementById('llm-manage-btn');
   const llmProviderLabelEl = document.getElementById('llm-provider-label');
   const llmModalEl = document.getElementById('llmModal');
-  const llmModalProviderList = document.getElementById('llm-modal-provider-list');
-  const llmModalModelSelect = document.getElementById('llm-modal-model-select');
+  const llmModalProviderList = document.getElementById('llm-modal-provider-list'); // legacy chat radio
+  const llmModalModelSelect = document.getElementById('llm-modal-model-select'); // chat model select
+  const llmModalEmbeddingInput = document.getElementById('llm-modal-embedding-input');
+  const llmModalTtsInput = document.getElementById('llm-modal-tts-input');
+  const llmModalEmbeddingOptions = document.getElementById('llm-modal-embedding-options');
+  const llmModalTtsOptions = document.getElementById('llm-modal-tts-options');
   const llmModalApiEnv = document.getElementById('llm-modal-api-env');
   const llmModalApiStatus = document.getElementById('llm-modal-api-status');
   const llmModalEndpoint = document.getElementById('llm-modal-endpoint');
   const llmModalTestBtn = document.getElementById('llm-modal-test-btn');
   const llmModalTestResult = document.getElementById('llm-modal-test-result');
+  const llmChatProviderSelect = document.getElementById('llm-modal-provider-select-chat');
+  const llmEmbedProviderSelect = document.getElementById('llm-embed-provider');
+  const llmEmbedModelInput = document.getElementById('llm-embed-model');
+  const llmEmbedModelOptions = document.getElementById('llm-embed-model-options');
+  const llmEmbedEndpoint = document.getElementById('llm-embed-endpoint');
+  const llmEmbedTestBtn = document.getElementById('llm-embed-test-btn');
+  const llmEmbedTestResult = document.getElementById('llm-embed-test-result');
+  const llmTtsProviderSelect = document.getElementById('llm-tts-provider');
+  const llmTtsModelInput = document.getElementById('llm-tts-model');
+  const llmTtsModelOptions = document.getElementById('llm-tts-model-options');
+  const llmTtsEndpoint = document.getElementById('llm-tts-endpoint');
+  const llmTtsTestBtn = document.getElementById('llm-tts-test-btn');
+  const llmTtsTestResult = document.getElementById('llm-tts-test-result');
 
   function getLlmProviderMeta(id){
     if(!id) return null;
@@ -3921,58 +4098,102 @@ function jumpToPage(targetIdx) {
     return null;
   }
 
+  function normalizeLlmSettings(raw){
+    const state = {
+      chatProvider: '',
+      chatModel: '',
+      embeddingProvider: '',
+      embeddingModel: '',
+      ttsProvider: '',
+      ttsModel: '',
+    };
+    const src = (raw && typeof raw === 'object') ? raw : {};
+    const chatBlock = (src.chat && typeof src.chat === 'object') ? src.chat : {};
+    const embedBlock = (src.embedding && typeof src.embedding === 'object') ? src.embedding : {};
+    const ttsBlock = (src.tts && typeof src.tts === 'object') ? src.tts : {};
+    state.chatProvider = (src.chatProvider || chatBlock.provider || src.provider || '').trim();
+    state.chatModel = (src.chatModel || chatBlock.model || src.model || '').trim();
+    state.embeddingProvider = (src.embeddingProvider || embedBlock.provider || src.provider || '').trim();
+    state.embeddingModel = (src.embeddingModel || embedBlock.model || src.embedding_model || '').trim();
+    state.ttsProvider = (src.ttsProvider || ttsBlock.provider || src.provider || '').trim();
+    state.ttsModel = (src.ttsModel || ttsBlock.model || src.tts_model || '').trim();
+    return state;
+  }
+
+  llmSettings = normalizeLlmSettings(llmDefaultState);
+
   function ensureLlmSettingsDefaults(){
     if(!llmSettings || typeof llmSettings !== 'object'){
-      llmSettings = {};
+      llmSettings = normalizeLlmSettings({});
     }
-    let providerId = (typeof llmSettings.provider === 'string' && llmSettings.provider.trim()) ? llmSettings.provider.trim().toLowerCase() : '';
-    let meta = getLlmProviderMeta(providerId);
-    if(!meta){
-      const fallback = (typeof llmDefaultState.provider === 'string' && getLlmProviderMeta(llmDefaultState.provider)) ? llmDefaultState.provider : '';
-      if(fallback){
-        providerId = fallback;
-      } else if(llmProviders.length > 0 && typeof llmProviders[0].id === 'string'){
-        providerId = llmProviders[0].id;
-      } else {
-        providerId = '';
+    const usages = [
+      {providerKey: 'chatProvider', modelKey: 'chatModel', defaultProvider: llmDefaultState.chatProvider, defaultModel: llmDefaultState.chatModel, modelSource: 'defaultModel', modelsField: 'models'},
+      {providerKey: 'embeddingProvider', modelKey: 'embeddingModel', defaultProvider: llmDefaultState.embeddingProvider, defaultModel: llmDefaultState.embeddingModel, modelSource: 'defaultEmbeddingModel', modelsField: 'embeddingModels'},
+      {providerKey: 'ttsProvider', modelKey: 'ttsModel', defaultProvider: llmDefaultState.ttsProvider, defaultModel: llmDefaultState.ttsModel, modelSource: 'defaultTtsModel', modelsField: 'ttsModels'},
+    ];
+    usages.forEach(entry => {
+      const providerKey = entry.providerKey;
+      const modelKey = entry.modelKey;
+      let providerId = (typeof llmSettings[providerKey] === 'string' && llmSettings[providerKey].trim()) ? llmSettings[providerKey].trim().toLowerCase() : '';
+      let meta = getLlmProviderMeta(providerId);
+      if(!meta){
+        const fallback = (typeof entry.defaultProvider === 'string' && getLlmProviderMeta(entry.defaultProvider)) ? entry.defaultProvider : '';
+        if(fallback){
+          providerId = fallback;
+        } else if(llmProviders.length > 0 && typeof llmProviders[0].id === 'string'){
+          providerId = llmProviders[0].id;
+        }
+        meta = getLlmProviderMeta(providerId);
       }
-      meta = getLlmProviderMeta(providerId);
-    }
-    if(providerId){
-      llmSettings.provider = providerId.toLowerCase();
-    } else if('provider' in llmSettings){
-      delete llmSettings.provider;
-    }
-    if(meta){
-      const currentModel = (typeof llmSettings.model === 'string' && llmSettings.model.trim()) ? llmSettings.model.trim() : '';
-      if(!currentModel){
-        const defaultModel = (typeof meta.defaultModel === 'string' && meta.defaultModel.trim()) ? meta.defaultModel.trim() : '';
-        if(defaultModel){
-          llmSettings.model = defaultModel;
-        } else if(Array.isArray(meta.models) && meta.models.length > 0 && typeof meta.models[0] === 'string'){
-          llmSettings.model = meta.models[0];
-        } else if('model' in llmSettings){
-          delete llmSettings.model;
+      llmSettings[providerKey] = providerId || '';
+      if(meta){
+        const currentModel = (typeof llmSettings[modelKey] === 'string' && llmSettings[modelKey].trim()) ? llmSettings[modelKey].trim() : '';
+        if(!currentModel){
+          const defaultField = entry.modelSource || 'defaultModel';
+          const listField = entry.modelsField || 'models';
+          const defaultModel = (typeof (entry.defaultModel || meta[defaultField]) === 'string' && (entry.defaultModel || meta[defaultField]).trim())
+            ? (entry.defaultModel || meta[defaultField]).trim()
+            : '';
+          const modelList = Array.isArray(meta[listField]) ? meta[listField].filter(m => typeof m === 'string' && m.trim()) : [];
+          if(defaultModel){
+            llmSettings[modelKey] = defaultModel;
+          } else if(modelList.length){
+            llmSettings[modelKey] = modelList[0];
+          } else {
+            llmSettings[modelKey] = '';
+          }
         }
       }
-    }
+    });
   }
 
   function getLlmPayload(){
-    const payload = {};
-    if(llmSettings && typeof llmSettings === 'object'){
-      if(typeof llmSettings.provider === 'string' && llmSettings.provider.trim()){
-        payload.provider = llmSettings.provider.trim().toLowerCase();
-      }
-      if(typeof llmSettings.model === 'string' && llmSettings.model.trim()){
-        payload.model = llmSettings.model.trim();
-      }
-    }
+    const payload = {
+      chat: {
+        provider: (llmSettings.chatProvider || '').trim() || undefined,
+        model: (llmSettings.chatModel || '').trim() || undefined,
+      },
+      embedding: {
+        provider: (llmSettings.embeddingProvider || '').trim() || undefined,
+        model: (llmSettings.embeddingModel || '').trim() || undefined,
+      },
+      tts: {
+        provider: (llmSettings.ttsProvider || '').trim() || undefined,
+        model: (llmSettings.ttsModel || '').trim() || undefined,
+      },
+    };
+    // legacy flatten
+    payload.provider = payload.chat.provider;
+    payload.model = payload.chat.model;
+    payload.embeddingModel = payload.embedding.model;
+    payload.ttsModel = payload.tts.model;
+    payload.embeddingProvider = payload.embedding.provider;
+    payload.ttsProvider = payload.tts.provider;
     return payload;
   }
 
   function updateLlmButtonLabel(){
-    const meta = getLlmProviderMeta(llmSettings && llmSettings.provider);
+    const meta = getLlmProviderMeta(llmSettings && llmSettings.chatProvider);
     const providerLabel = meta ? (meta.label || meta.id) : '--';
     if(llmProviderLabelEl){
       llmProviderLabelEl.textContent = providerLabel || '--';
@@ -3980,10 +4201,16 @@ function jumpToPage(targetIdx) {
     if(llmManageBtn){
       const parts = [];
       if(providerLabel && providerLabel !== '--') parts.push(providerLabel);
-      if(llmSettings && typeof llmSettings.model === 'string' && llmSettings.model.trim()){
-        parts.push(llmSettings.model.trim());
+      if(llmSettings && typeof llmSettings.chatModel === 'string' && llmSettings.chatModel.trim()){
+        parts.push(llmSettings.chatModel.trim());
       }
-      llmManageBtn.title = parts.length ? `当前 LLM：${parts.join(' · ')}` : '管理 LLM 设置';
+      if(llmSettings && typeof llmSettings.embeddingModel === 'string' && llmSettings.embeddingModel.trim()){
+        parts.push(`emb: ${llmSettings.embeddingModel.trim()}`);
+      }
+      if(llmSettings && typeof llmSettings.ttsModel === 'string' && llmSettings.ttsModel.trim()){
+        parts.push(`tts: ${llmSettings.ttsModel.trim()}`);
+      }
+      llmManageBtn.title = parts.length ? `当前模型：${parts.join(' · ')}` : '管理模型设置';
     }
   }
 
@@ -3994,7 +4221,7 @@ function jumpToPage(targetIdx) {
       llmModalProviderList.innerHTML = '<div class="text-muted small">暂无可用提供方。</div>';
       return;
     }
-    const active = (typeof llmSettings.provider === 'string' && llmSettings.provider.trim()) ? llmSettings.provider.trim().toLowerCase() : '';
+    const active = (typeof llmSettings.chatProvider === 'string' && llmSettings.chatProvider.trim()) ? llmSettings.chatProvider.trim().toLowerCase() : '';
     llmProviders.forEach(provider => {
       if(!provider || typeof provider.id !== 'string') return;
       const wrapper = document.createElement('div');
@@ -4011,6 +4238,7 @@ function jumpToPage(targetIdx) {
         if(!input.checked) return;
         handleLlmProviderSelect(provider.id);
         renderLlmModalModels();
+        renderLlmProviderSelect(llmChatProviderSelect, llmSettings.chatProvider);
         updateLlmModalMeta();
         clearLlmTestResult();
       });
@@ -4050,11 +4278,29 @@ function jumpToPage(targetIdx) {
     });
   }
 
+  function renderLlmProviderSelect(selectEl, activeId){
+    if(!selectEl) return;
+    const current = (activeId || '').toLowerCase();
+    selectEl.innerHTML = '';
+    llmProviders.forEach(provider => {
+      if(!provider || typeof provider.id !== 'string') return;
+      const opt = document.createElement('option');
+      opt.value = provider.id;
+      opt.textContent = provider.label || provider.id;
+      selectEl.appendChild(opt);
+    });
+    if(current){
+      selectEl.value = current;
+    } else if(selectEl.options.length){
+      selectEl.selectedIndex = 0;
+    }
+  }
+
   function renderLlmModalModels(){
     if(!llmModalModelSelect) return;
-    const meta = getLlmProviderMeta(llmSettings && llmSettings.provider);
+    const meta = getLlmProviderMeta(llmSettings && llmSettings.chatProvider);
     const models = Array.isArray(meta && meta.models) ? meta.models.filter(model => typeof model === 'string') : [];
-    const current = (typeof llmSettings.model === 'string' && llmSettings.model.trim()) ? llmSettings.model.trim() : '';
+    const current = (typeof llmSettings.chatModel === 'string' && llmSettings.chatModel.trim()) ? llmSettings.chatModel.trim() : '';
     llmModalModelSelect.innerHTML = '';
     if(!models.length){
       const fallback = current || (meta && typeof meta?.defaultModel === 'string' && meta.defaultModel.trim() ? meta.defaultModel.trim() : '');
@@ -4085,8 +4331,70 @@ function jumpToPage(targetIdx) {
     llmModalModelSelect.disabled = llmModalModelSelect.options.length <= 1;
   }
 
+  function renderLlmModalEmbedding(){
+    if(!llmModalEmbeddingInput) return;
+    const current = (typeof llmSettings.embeddingModel === 'string' && llmSettings.embeddingModel.trim()) ? llmSettings.embeddingModel.trim() : '';
+    const meta = getLlmProviderMeta(llmSettings && llmSettings.embeddingProvider);
+    if(llmEmbedProviderSelect){
+      renderLlmProviderSelect(llmEmbedProviderSelect, llmSettings.embeddingProvider);
+    }
+    const fallback = (meta && typeof meta.defaultEmbeddingModel === 'string' && meta.defaultEmbeddingModel.trim()) ? meta.defaultEmbeddingModel.trim() : '';
+    if(llmModalEmbeddingOptions){
+      llmModalEmbeddingOptions.innerHTML = '';
+      const options = Array.isArray(meta && meta.embeddingModels) ? meta.embeddingModels.filter(m => typeof m === 'string' && m.trim()) : [];
+      options.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        llmModalEmbeddingOptions.appendChild(opt);
+      });
+    }
+    llmModalEmbeddingInput.value = current || fallback || '';
+    llmModalEmbeddingInput.placeholder = fallback || 'text-embedding-3-large';
+    const hint = document.getElementById('llm-modal-embedding-hint');
+    if(hint){
+      const path = meta && meta.embeddingPath ? meta.embeddingPath : '/embeddings';
+      hint.textContent = `不填则使用默认：${fallback || 'text-embedding-3-large'}（路径 ${path}）`;
+    }
+    if(llmEmbedEndpoint){
+      const base = meta && meta.baseUrl ? meta.baseUrl : '';
+      const path = meta && meta.embeddingPath ? meta.embeddingPath : '/embeddings';
+      llmEmbedEndpoint.textContent = `接口：${base}${path}`;
+    }
+  }
+
+  function renderLlmModalTts(){
+    if(!llmModalTtsInput) return;
+    const current = (typeof llmSettings.ttsModel === 'string' && llmSettings.ttsModel.trim()) ? llmSettings.ttsModel.trim() : '';
+    const meta = getLlmProviderMeta(llmSettings && llmSettings.ttsProvider);
+    if(llmTtsProviderSelect){
+      renderLlmProviderSelect(llmTtsProviderSelect, llmSettings.ttsProvider);
+    }
+    const fallback = (meta && typeof meta.defaultTtsModel === 'string' && meta.defaultTtsModel.trim()) ? meta.defaultTtsModel.trim() : '';
+    if(llmModalTtsOptions){
+      llmModalTtsOptions.innerHTML = '';
+      const options = Array.isArray(meta && meta.ttsModels) ? meta.ttsModels.filter(m => typeof m === 'string' && m.trim()) : [];
+      options.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        llmModalTtsOptions.appendChild(opt);
+      });
+    }
+    llmModalTtsInput.value = current || fallback || '';
+    llmModalTtsInput.placeholder = fallback || 'tts-1';
+    const hint = document.getElementById('llm-modal-tts-hint');
+    if(hint){
+        const path = meta && meta.ttsPath ? meta.ttsPath : '/audio/speech';
+        hint.textContent = `不填则使用默认：${fallback || 'tts-1'}（路径 ${path}）`;
+    }
+    if(llmTtsEndpoint){
+      const base = meta && meta.baseUrl ? meta.baseUrl : '';
+      const path = meta && meta.ttsPath ? meta.ttsPath : '/audio/speech';
+      llmTtsEndpoint.textContent = `接口：${base}${path}`;
+    }
+  }
+
   function updateLlmModalMeta(){
-    const meta = getLlmProviderMeta(llmSettings && llmSettings.provider);
+    const meta = getLlmProviderMeta(llmSettings && llmSettings.chatProvider);
     if(llmModalApiEnv){
       llmModalApiEnv.textContent = meta && meta.apiKeyEnv ? meta.apiKeyEnv : '未配置';
     }
@@ -4105,7 +4413,13 @@ function jumpToPage(targetIdx) {
       const base = meta && meta.baseUrl ? meta.baseUrl : '';
       const path = meta && meta.chatPath ? meta.chatPath : '';
       const endpointText = `${base || ''}${path || ''}`.trim();
-      llmModalEndpoint.textContent = endpointText ? `接口：${endpointText}` : '';
+      llmModalEndpoint.textContent = endpointText ? `聊天接口：${endpointText}` : '';
+      if(meta && meta.embeddingPath){
+        llmModalEndpoint.textContent += ` | Embeddings: ${meta.embeddingPath}`;
+      }
+      if(meta && meta.ttsPath){
+        llmModalEndpoint.textContent += ` | TTS: ${meta.ttsPath}`;
+      }
     }
     if(llmModalTestBtn){
       llmModalTestBtn.disabled = !(meta && meta.hasApiKey);
@@ -4115,7 +4429,10 @@ function jumpToPage(targetIdx) {
   function renderLlmModal(){
     ensureLlmSettingsDefaults();
     renderLlmModalProviders();
+    renderLlmProviderSelect(llmChatProviderSelect, llmSettings.chatProvider);
     renderLlmModalModels();
+    renderLlmModalEmbedding();
+    renderLlmModalTts();
     updateLlmModalMeta();
   }
 
@@ -4139,6 +4456,22 @@ function jumpToPage(targetIdx) {
     llmModalTestResult.textContent = message || '';
   }
 
+  function setGenericTestResult(el, message, tone){
+    if(!el) return;
+    const classes = ['flex-grow-1', 'small'];
+    if(tone === 'success'){
+      classes.push('text-success');
+    } else if(tone === 'danger'){
+      classes.push('text-danger');
+    } else if(tone === 'warning'){
+      classes.push('text-warning');
+    } else {
+      classes.push('text-muted');
+    }
+    el.className = classes.join(' ');
+    el.textContent = message || '';
+  }
+
   function handleLlmProviderSelect(providerId){
     const meta = getLlmProviderMeta(providerId);
     if(!meta){
@@ -4146,22 +4479,22 @@ function jumpToPage(targetIdx) {
       return;
     }
     if(!llmSettings || typeof llmSettings !== 'object'){
-      llmSettings = {};
+      llmSettings = normalizeLlmSettings({});
     }
-    const previousProvider = (typeof llmSettings.provider === 'string') ? llmSettings.provider.trim().toLowerCase() : '';
-    const previousModel = (typeof llmSettings.model === 'string') ? llmSettings.model.trim() : '';
-    llmSettings.provider = meta.id.trim().toLowerCase();
+    const previousProvider = (typeof llmSettings.chatProvider === 'string') ? llmSettings.chatProvider.trim().toLowerCase() : '';
+    const previousModel = (typeof llmSettings.chatModel === 'string') ? llmSettings.chatModel.trim() : '';
+    llmSettings.chatProvider = meta.id.trim().toLowerCase();
     if(meta.defaultModel && typeof meta.defaultModel === 'string' && meta.defaultModel.trim()){
-      llmSettings.model = meta.defaultModel.trim();
+      llmSettings.chatModel = meta.defaultModel.trim();
     } else if(Array.isArray(meta.models) && meta.models.length > 0 && typeof meta.models[0] === 'string'){
-      llmSettings.model = meta.models[0];
-    } else if('model' in llmSettings){
-      delete llmSettings.model;
+      llmSettings.chatModel = meta.models[0];
+    } else {
+      llmSettings.chatModel = '';
     }
-    const nextModel = (typeof llmSettings.model === 'string') ? llmSettings.model : '';
+    const nextModel = (typeof llmSettings.chatModel === 'string') ? llmSettings.chatModel : '';
     refreshLlmUi();
     clearLlmTestResult();
-    if(previousProvider !== llmSettings.provider || previousModel !== nextModel){
+    if(previousProvider !== llmSettings.chatProvider || previousModel !== nextModel){
       saveProject();
       showStatus(`已切换至 ${meta.label || meta.id}`, 'success', 2000);
     }
@@ -4169,12 +4502,14 @@ function jumpToPage(targetIdx) {
 
   function withLlmConfig(payload){
     const base = (payload && typeof payload === 'object') ? {...payload} : {};
-    if(llmSettings && typeof llmSettings.provider === 'string' && llmSettings.provider.trim()){
-      base.llmProvider = llmSettings.provider.trim().toLowerCase();
-    }
-    if(llmSettings && typeof llmSettings.model === 'string' && llmSettings.model.trim()){
-      base.llmModel = llmSettings.model.trim();
-    }
+    const llmPayload = getLlmPayload();
+    base.llm = llmPayload;
+    base.llmProvider = (llmPayload.chat && llmPayload.chat.provider) || undefined;
+    base.llmModel = (llmPayload.chat && llmPayload.chat.model) || undefined;
+    base.embeddingModel = (llmPayload.embedding && llmPayload.embedding.model) || undefined;
+    base.embeddingProvider = (llmPayload.embedding && llmPayload.embedding.provider) || undefined;
+    base.ttsModel = (llmPayload.tts && llmPayload.tts.model) || undefined;
+    base.ttsProvider = (llmPayload.tts && llmPayload.tts.provider) || undefined;
     return base;
   }
 
@@ -4209,14 +4544,110 @@ function jumpToPage(targetIdx) {
     llmModalModelSelect.addEventListener('change', () => {
       const value = (llmModalModelSelect.value || '').trim();
       if(value && llmSettings){
-        const previous = (typeof llmSettings.model === 'string') ? llmSettings.model.trim() : '';
+        const previous = (typeof llmSettings.chatModel === 'string') ? llmSettings.chatModel.trim() : '';
         if(previous !== value){
-          llmSettings.model = value;
+          llmSettings.chatModel = value;
           saveProject();
           refreshLlmUi();
         }
       }
       clearLlmTestResult();
+    });
+  }
+
+  if(llmModalEmbeddingInput && !llmModalEmbeddingInput.dataset.bound){
+    llmModalEmbeddingInput.dataset.bound = 'true';
+    llmModalEmbeddingInput.addEventListener('change', () => {
+      const value = (llmModalEmbeddingInput.value || '').trim();
+      const previous = (typeof llmSettings.embeddingModel === 'string') ? llmSettings.embeddingModel.trim() : '';
+      if(value){
+        if(value !== previous){
+          llmSettings.embeddingModel = value;
+          saveProject();
+          refreshLlmUi();
+        }
+      } else if(previous){
+        delete llmSettings.embeddingModel;
+        saveProject();
+        refreshLlmUi();
+      }
+      clearLlmTestResult();
+    });
+  }
+
+  if(llmModalTtsInput && !llmModalTtsInput.dataset.bound){
+    llmModalTtsInput.dataset.bound = 'true';
+    llmModalTtsInput.addEventListener('change', () => {
+      const value = (llmModalTtsInput.value || '').trim();
+      const previous = (typeof llmSettings.ttsModel === 'string') ? llmSettings.ttsModel.trim() : '';
+      if(value){
+        if(value !== previous){
+          llmSettings.ttsModel = value;
+          saveProject();
+          refreshLlmUi();
+        }
+      } else if(previous){
+        delete llmSettings.ttsModel;
+        saveProject();
+        refreshLlmUi();
+      }
+      clearLlmTestResult();
+    });
+  }
+
+  if(llmChatProviderSelect && !llmChatProviderSelect.dataset.bound){
+    llmChatProviderSelect.dataset.bound = 'true';
+    llmChatProviderSelect.addEventListener('change', () => {
+      const value = (llmChatProviderSelect.value || '').trim();
+      if(value){
+        handleLlmProviderSelect(value);
+        renderLlmModalModels();
+        clearLlmTestResult();
+      }
+    });
+  }
+
+  if(llmEmbedProviderSelect && !llmEmbedProviderSelect.dataset.bound){
+    llmEmbedProviderSelect.dataset.bound = 'true';
+    llmEmbedProviderSelect.addEventListener('change', () => {
+      const value = (llmEmbedProviderSelect.value || '').trim();
+      const meta = getLlmProviderMeta(value);
+      if(!meta) return;
+      llmSettings.embeddingProvider = value;
+      const defaultModel = (meta.defaultEmbeddingModel && typeof meta.defaultEmbeddingModel === 'string') ? meta.defaultEmbeddingModel.trim() : '';
+      const list = Array.isArray(meta.embeddingModels) ? meta.embeddingModels.filter(m => typeof m === 'string' && m.trim()) : [];
+      if(defaultModel){
+        llmSettings.embeddingModel = defaultModel;
+      } else if(list.length){
+        llmSettings.embeddingModel = list[0];
+      }
+      saveProject();
+      refreshLlmUi();
+      renderLlmModalEmbedding();
+      clearLlmTestResult();
+      if(llmEmbedTestResult) llmEmbedTestResult.textContent = '';
+    });
+  }
+
+  if(llmTtsProviderSelect && !llmTtsProviderSelect.dataset.bound){
+    llmTtsProviderSelect.dataset.bound = 'true';
+    llmTtsProviderSelect.addEventListener('change', () => {
+      const value = (llmTtsProviderSelect.value || '').trim();
+      const meta = getLlmProviderMeta(value);
+      if(!meta) return;
+      llmSettings.ttsProvider = value;
+      const defaultModel = (meta.defaultTtsModel && typeof meta.defaultTtsModel === 'string') ? meta.defaultTtsModel.trim() : '';
+      const list = Array.isArray(meta.ttsModels) ? meta.ttsModels.filter(m => typeof m === 'string' && m.trim()) : [];
+      if(defaultModel){
+        llmSettings.ttsModel = defaultModel;
+      } else if(list.length){
+        llmSettings.ttsModel = list[0];
+      }
+      saveProject();
+      refreshLlmUi();
+      renderLlmModalTts();
+      clearLlmTestResult();
+      if(llmTtsTestResult) llmTtsTestResult.textContent = '';
     });
   }
 
@@ -4231,7 +4662,7 @@ function jumpToPage(targetIdx) {
       setLlmTestResult('测试中...', 'muted');
       this.disabled = true;
       try{
-        const payload = withWorkspacePayload(withLlmConfig({}));
+        const payload = withWorkspacePayload(withLlmConfig({type: 'chat'}));
         const res = await fetch(appendWorkspaceQuery('/llm/test'), {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -4250,6 +4681,68 @@ function jumpToPage(targetIdx) {
       }catch(e){
         const msg = e && e.message ? e.message : String(e || '未知错误');
         setLlmTestResult(`测试失败：${msg}`, 'danger');
+      }
+      this.disabled = false;
+    });
+  }
+
+  if(llmEmbedTestBtn && !llmEmbedTestBtn.dataset.bound){
+    llmEmbedTestBtn.dataset.bound = 'true';
+    llmEmbedTestBtn.addEventListener('click', async function(){
+      if(this.disabled) return;
+      if(!ensureWorkspaceReady({silent: false})) return;
+      setGenericTestResult(llmEmbedTestResult, '测试中...', 'muted');
+      this.disabled = true;
+      try{
+        const payload = withWorkspacePayload(withLlmConfig({type: 'embedding'}));
+        const res = await fetch(appendWorkspaceQuery('/llm/test'), {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+        });
+        const parsed = await parseJsonSafe(res);
+        if(res.ok && parsed.json && parsed.json.success !== false){
+          const result = parsed.json.result || {};
+          const latency = typeof result.latencyMs === 'number' ? `${result.latencyMs.toFixed(1)} ms` : '未知延迟';
+          setGenericTestResult(llmEmbedTestResult, `连通正常（${latency}）`, 'success');
+        } else {
+          const message = (parsed.json && parsed.json.error) ? parsed.json.error : (parsed.text || `HTTP ${res.status}`);
+          setGenericTestResult(llmEmbedTestResult, `测试失败：${message}`, 'danger');
+        }
+      } catch(e){
+        const msg = e && e.message ? e.message : String(e || '未知错误');
+        setGenericTestResult(llmEmbedTestResult, `测试失败：${msg}`, 'danger');
+      }
+      this.disabled = false;
+    });
+  }
+
+  if(llmTtsTestBtn && !llmTtsTestBtn.dataset.bound){
+    llmTtsTestBtn.dataset.bound = 'true';
+    llmTtsTestBtn.addEventListener('click', async function(){
+      if(this.disabled) return;
+      if(!ensureWorkspaceReady({silent: false})) return;
+      setGenericTestResult(llmTtsTestResult, '测试中...', 'muted');
+      this.disabled = true;
+      try{
+        const payload = withWorkspacePayload(withLlmConfig({type: 'tts'}));
+        const res = await fetch(appendWorkspaceQuery('/llm/test'), {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+        });
+        const parsed = await parseJsonSafe(res);
+        if(res.ok && parsed.json && parsed.json.success !== false){
+          const result = parsed.json.result || {};
+          const latency = typeof result.latencyMs === 'number' ? `${result.latencyMs.toFixed(1)} ms` : '未知延迟';
+          setGenericTestResult(llmTtsTestResult, `连通正常（${latency}）`, 'success');
+        } else {
+          const message = (parsed.json && parsed.json.error) ? parsed.json.error : (parsed.text || `HTTP ${res.status}`);
+          setGenericTestResult(llmTtsTestResult, `测试失败：${message}`, 'danger');
+        }
+      } catch(e){
+        const msg = e && e.message ? e.message : String(e || '未知错误');
+        setGenericTestResult(llmTtsTestResult, `测试失败：${msg}`, 'danger');
       }
       this.disabled = false;
     });
@@ -8130,9 +8623,9 @@ function syncMarkdownEditorToPreview(container) {
           updateWorkspaceSecurityState({locked: !!data.locked, unlocked: !!data.unlocked});
         }
         if(data.llm && typeof data.llm === 'object'){
-          llmSettings = {...data.llm};
+          llmSettings = normalizeLlmSettings(data.llm);
         } else {
-          llmSettings = {};
+          llmSettings = normalizeLlmSettings({});
         }
         refreshLlmUi();
         latexTemplate = typeof data.template === 'string' ? {
@@ -8786,6 +9279,16 @@ applyDefaultWorkspaceIfNeeded();
     },
   };
 
+  const aiAssistantState = {
+    modal: null,
+    running: false,
+    contexts: [],
+    ragNotice: '',
+    ragUsed: false,
+    lastModel: '',
+    lastEmbedding: '',
+  };
+
   function handleLearningProjectSwitch(nextProject, options = {}) {
     const normalized = typeof nextProject === 'string' ? nextProject : '';
     const force = options && options.force === true;
@@ -9233,6 +9736,174 @@ applyDefaultWorkspaceIfNeeded();
       metaEl.textContent = pieces.join(' · ') || 'AI 学习结果';
     }
     modal.show();
+  }
+
+  function ensureAssistantModal() {
+    if (!aiAssistantState.modal) {
+      const modalEl = document.getElementById('aiAssistantModal');
+      if (!modalEl) return null;
+      aiAssistantState.modal = new bootstrap.Modal(modalEl);
+    }
+    return aiAssistantState.modal;
+  }
+
+  function setAssistantStatus(text, variant = 'muted') {
+    const statusEl = document.getElementById('ai-assistant-status');
+    if (!statusEl) return;
+    statusEl.textContent = text || '';
+    statusEl.className = `text-${variant} small`;
+  }
+
+  function setAssistantMeta(meta = {}) {
+    const metaEl = document.getElementById('ai-assistant-meta');
+    if (!metaEl) return;
+    const parts = [];
+    if (meta.llmModel) parts.push(`LLM: ${meta.llmModel}`);
+    if (meta.embeddingModel) parts.push(`Embedding: ${meta.embeddingModel}`);
+    parts.push(meta.ragUsed ? 'RAG: ON' : 'RAG: OFF');
+    metaEl.textContent = parts.join(' · ');
+  }
+
+  function setAssistantAnswer(text) {
+    const answerEl = document.getElementById('ai-assistant-answer');
+    if (answerEl) {
+      answerEl.textContent = text || '';
+    }
+  }
+
+  function renderAssistantContexts(contexts, notice = '') {
+    const container = document.getElementById('ai-assistant-contexts');
+    const countEl = document.getElementById('ai-assistant-context-count');
+    const safeContexts = Array.isArray(contexts) ? contexts : [];
+    if (countEl) countEl.textContent = safeContexts.length;
+    if (!container) return;
+    container.innerHTML = '';
+    if (!safeContexts.length) {
+      if (notice) {
+        const hint = document.createElement('div');
+        hint.className = 'text-muted small';
+        hint.textContent = notice;
+        container.appendChild(hint);
+      }
+      return;
+    }
+    safeContexts.forEach(ctx => {
+      const card = document.createElement('div');
+      card.className = 'ai-assistant-context';
+      const title = document.createElement('div');
+      title.className = 'ai-assistant-context__title';
+      const rankLabel = ctx.rank ? `[#${ctx.rank}] ` : '';
+      title.textContent = `${rankLabel}${ctx.label || '上下文片段'}`;
+      const meta = document.createElement('div');
+      meta.className = 'ai-assistant-context__meta';
+      const metaParts = [];
+      if (typeof ctx.pageIdx === 'number') metaParts.push(`页 ${ctx.pageIdx + 1}`);
+      if (typeof ctx.score === 'number') metaParts.push(`距离 ${ctx.score.toFixed(3)}`);
+      meta.textContent = metaParts.join(' · ') || 'Markdown 片段';
+      const body = document.createElement('div');
+      body.textContent = ctx.text || '';
+      card.appendChild(title);
+      card.appendChild(meta);
+      card.appendChild(body);
+      container.appendChild(card);
+    });
+  }
+
+  function openAssistantModal() {
+    const modal = ensureAssistantModal();
+    if (!modal) return;
+    const messageEl = document.getElementById('ai-assistant-message');
+    if (messageEl && !messageEl.value.trim()) {
+      const selection = getLearningSelection();
+      if (selection) {
+        messageEl.value = selection;
+      }
+    }
+    setAssistantStatus('准备就绪', 'muted');
+    renderAssistantContexts([], '开启 RAG 可从 Markdown 中检索上下文。');
+    setAssistantAnswer('');
+    setAssistantMeta({ragUsed: !!(document.getElementById('ai-assistant-use-rag')?.checked)});
+    modal.show();
+  }
+
+  async function runAssistant(triggerBtn) {
+    if (aiAssistantState.running) return;
+    const messageEl = document.getElementById('ai-assistant-message');
+    const useRagEl = document.getElementById('ai-assistant-use-rag');
+    if (!messageEl) return;
+    const content = (messageEl.value || '').trim();
+    if (!content) {
+      alert('请先输入问题或内容');
+      return;
+    }
+    aiAssistantState.running = true;
+    const useRag = useRagEl ? !!useRagEl.checked : true;
+    setAssistantStatus(useRag ? '检索工作区 Markdown 中...' : '已关闭 RAG，直接对话', useRag ? 'info' : 'warning');
+    if (triggerBtn) {
+      triggerBtn.disabled = true;
+      triggerBtn.dataset.originalLabel = triggerBtn.dataset.originalLabel || triggerBtn.textContent || '发送';
+      triggerBtn.textContent = '处理中...';
+    }
+    try {
+      const payload = withWorkspacePayload(withLlmConfig({
+        message: content,
+        useRag,
+      }));
+      const res = await fetch(appendWorkspaceQuery('/assistant/query'), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const text = (await res.text()) || `HTTP ${res.status}`;
+        throw new Error(text);
+      }
+      const data = await res.json();
+      if (!data || data.success === false) {
+        throw new Error((data && data.error) || 'AI 助理请求失败');
+      }
+      setAssistantAnswer(data.result || '');
+      renderAssistantContexts(data.contexts || [], data.ragNotice || '');
+      setAssistantStatus(
+        data.ragNotice || (data.ragUsed ? '已使用 RAG 命中工作区 Markdown' : '未使用 RAG 或无命中'),
+        data.ragUsed ? 'success' : 'muted'
+      );
+      setAssistantMeta({
+        llmModel: data.llmModel,
+        embeddingModel: data.embeddingModel,
+        ragUsed: !!data.ragUsed,
+      });
+      aiAssistantState.ragUsed = !!data.ragUsed;
+      aiAssistantState.ragNotice = data.ragNotice || '';
+      aiAssistantState.contexts = data.contexts || [];
+      aiAssistantState.lastModel = data.llmModel || '';
+      aiAssistantState.lastEmbedding = data.embeddingModel || '';
+    } catch (err) {
+      console.error('AI 助理失败:', err);
+      showStatus('AI 助理失败：' + (err?.message || err || '未知错误'), 'danger', 6000);
+      setAssistantStatus(err?.message || '请求失败', 'danger');
+    } finally {
+      aiAssistantState.running = false;
+      if (triggerBtn) {
+        triggerBtn.disabled = false;
+        triggerBtn.textContent = triggerBtn.dataset.originalLabel || '发送';
+      }
+    }
+  }
+
+  function copyAssistantAnswer() {
+    const answerEl = document.getElementById('ai-assistant-answer');
+    const text = answerEl ? (answerEl.textContent || '') : '';
+    if (!text.trim()) {
+      showStatus('没有可复制的内容', 'warning', 2000);
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      showStatus('已复制 AI 助理回复', 'success', 2200);
+    }).catch(err => {
+      console.error('复制失败', err);
+      showStatus('复制失败，请手动复制', 'warning', 2400);
+    });
   }
 
   function gatherLearningResultFormValues() {
@@ -9889,6 +10560,34 @@ applyDefaultWorkspaceIfNeeded();
     });
   }
 
+  const aiAssistantBtn = document.getElementById('ai-assistant-btn');
+  if (aiAssistantBtn) {
+    aiAssistantBtn.addEventListener('click', openAssistantModal);
+  }
+
+  const aiAssistantRun = document.getElementById('ai-assistant-run');
+  if (aiAssistantRun) {
+    aiAssistantRun.addEventListener('click', () => runAssistant(aiAssistantRun));
+  }
+
+  const aiAssistantCopy = document.getElementById('ai-assistant-copy');
+  if (aiAssistantCopy) {
+    aiAssistantCopy.addEventListener('click', copyAssistantAnswer);
+  }
+
+  const aiAssistantUseRag = document.getElementById('ai-assistant-use-rag');
+  if (aiAssistantUseRag) {
+    aiAssistantUseRag.addEventListener('change', () => {
+      const checked = !!aiAssistantUseRag.checked;
+      setAssistantStatus(checked ? '将优先使用 Markdown RAG' : '已关闭 RAG，直接对话', checked ? 'info' : 'warning');
+      setAssistantMeta({
+        ragUsed: checked && aiAssistantState.ragUsed,
+        llmModel: aiAssistantState.lastModel,
+        embeddingModel: aiAssistantState.lastEmbedding,
+      });
+    });
+  }
+
   document.getElementById('play-note').onclick = function() {
     const script = pagesData[currentPageIdx]?.script || '';
     if(!script.trim()) return alert('当前页讲稿为空');
@@ -9898,7 +10597,7 @@ applyDefaultWorkspaceIfNeeded();
     fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({text: script})
+      body: JSON.stringify(withLlmConfig({text: script}))
     }).then(res=>res.json()).then(data=>{
       if(data.success && data.audio) {
         const audio = new Audio('data:audio/mp3;base64,' + data.audio);

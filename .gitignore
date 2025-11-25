@@ -5,6 +5,7 @@
 !.gitignore
 !README.md
 !pyproject.toml
+!benort.sh
 
 # 保留的源代码及脚本目录
 !benort/

@@ -60,17 +60,38 @@ def resolve_llm_config(
     *,
     project: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
+    embedding_model: Optional[str] = None,
+    tts_model: Optional[str] = None,
+    usage: str = "chat",
     overrides: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """根据项目与参数解析最终 LLM 配置。"""
 
     project_provider = None
     project_model = None
+    project_embedding = None
+    project_tts = None
     if isinstance(project, dict):
         project_llm = project.get("llm")
         if isinstance(project_llm, dict):
-            project_provider = project_llm.get("provider")
-            project_model = project_llm.get("model")
+            chat_block = project_llm.get("chat") if isinstance(project_llm.get("chat"), dict) else {}
+            embed_block = project_llm.get("embedding") if isinstance(project_llm.get("embedding"), dict) else {}
+            tts_block = project_llm.get("tts") if isinstance(project_llm.get("tts"), dict) else {}
+            if usage == "embedding":
+                project_provider = embed_block.get("provider") or project_llm.get("provider")
+                project_model = embed_block.get("model")
+            elif usage == "tts":
+                project_provider = tts_block.get("provider") or project_llm.get("provider")
+                project_model = tts_block.get("model")
+            else:
+                project_provider = chat_block.get("provider") or project_llm.get("provider")
+                project_model = chat_block.get("model") or project_llm.get("model")
+            project_embedding = (
+                embed_block.get("model")
+                or project_llm.get("embeddingModel")
+                or project_llm.get("embedding_model")
+            )
+            project_tts = tts_block.get("model") or project_llm.get("ttsModel") or project_llm.get("tts_model")
 
     resolved_id = _normalize_provider_id(provider_id or project_provider)
     provider = _copy_provider(resolved_id)
@@ -79,27 +100,53 @@ def resolve_llm_config(
     if _env_is_default_provider(resolved_id):
         env_base_url = os.environ.get("LLM_BASE_URL")
         env_chat_path = os.environ.get("LLM_CHAT_PATH")
+        env_embedding_path = os.environ.get("LLM_EMBEDDING_PATH")
         env_api_key_env = os.environ.get("LLM_API_KEY_ENV")
         if env_base_url:
             provider["base_url"] = env_base_url
         if env_chat_path:
             provider["chat_path"] = env_chat_path
+        if env_embedding_path:
+            provider["embedding_path"] = env_embedding_path
         if env_api_key_env:
             provider["api_key_env"] = env_api_key_env
         env_model = os.environ.get("LLM_MODEL")
         if env_model:
             provider["default_model"] = env_model
+        env_embedding_model = os.environ.get("LLM_EMBEDDING_MODEL")
+        if env_embedding_model:
+            provider["default_embedding_model"] = env_embedding_model
+        env_tts_model = os.environ.get("LLM_TTS_MODEL")
+        if env_tts_model:
+            provider["default_tts_model"] = env_tts_model
 
     if overrides:
         provider.update(overrides)
 
     provider["base_url"] = _normalize_base_url(str(provider.get("base_url") or ""))
     provider["chat_path"] = _normalize_path(str(provider.get("chat_path") or ""))
+    provider["embedding_path"] = _normalize_path(str(provider.get("embedding_path") or "/embeddings"))
+    provider["tts_path"] = _normalize_path(str(provider.get("tts_path") or "/audio/speech"))
+    embedding_base = _normalize_base_url(str(provider.get("embedding_base_url") or provider["base_url"]))
+    tts_base = _normalize_base_url(str(provider.get("tts_base_url") or provider["base_url"]))
     endpoint = f"{provider['base_url']}{provider['chat_path']}" if provider["base_url"] else provider["chat_path"]
     provider["endpoint"] = endpoint
+    embedding_endpoint = (
+        f"{embedding_base}{provider['embedding_path']}" if embedding_base else provider["embedding_path"]
+    )
+    provider["embedding_endpoint"] = embedding_endpoint
+    tts_endpoint = f"{tts_base}{provider['tts_path']}" if tts_base else provider["tts_path"]
+    provider["tts_endpoint"] = tts_endpoint
 
     chosen_model = model or project_model or provider.get("default_model")
     provider["model"] = chosen_model
+    provider["embedding_model"] = (
+        embedding_model
+        or project_embedding
+        or provider.get("embedding_model")
+        or provider.get("default_embedding_model")
+    )
+    provider["tts_model"] = tts_model or project_tts or provider.get("tts_model") or provider.get("default_tts_model")
 
     api_key_env = str(provider.get("api_key_env") or "").strip()
     api_key = os.environ.get(api_key_env) if api_key_env else None
@@ -119,9 +166,15 @@ def list_llm_providers() -> List[Dict[str, Any]]:
             "id": provider_id,
             "label": info.get("label", provider_id.title()),
             "defaultModel": info.get("default_model"),
+            "defaultEmbeddingModel": info.get("default_embedding_model"),
+            "defaultTtsModel": info.get("default_tts_model"),
             "models": list(info.get("models") or []),
+            "embeddingModels": list(info.get("embedding_models") or []),
+            "ttsModels": list(info.get("tts_models") or []),
             "baseUrl": info.get("base_url"),
             "chatPath": info.get("chat_path"),
+            "embeddingPath": info.get("embedding_path"),
+            "ttsPath": info.get("tts_path"),
             "apiKeyEnv": api_key_env,
             "hasApiKey": bool(api_key_env and os.environ.get(str(api_key_env))),
         }
@@ -130,12 +183,18 @@ def list_llm_providers() -> List[Dict[str, Any]]:
 
 
 def get_default_llm_state() -> Dict[str, Optional[str]]:
-    """返回默认选中的 LLM 状态（provider + model）。"""
+    """返回默认选中的 LLM 状态（chat/embedding/tts）。"""
 
-    config = resolve_llm_config()
+    chat_config = resolve_llm_config()
+    embedding_config = resolve_llm_config(usage="embedding")
+    tts_config = resolve_llm_config(usage="tts")
     return {
-        "provider": config.get("id"),
-        "model": config.get("model"),
+        "chatProvider": chat_config.get("id"),
+        "chatModel": chat_config.get("model"),
+        "embeddingProvider": embedding_config.get("id"),
+        "embeddingModel": embedding_config.get("embedding_model"),
+        "ttsProvider": tts_config.get("id"),
+        "ttsModel": tts_config.get("tts_model"),
     }
 
 

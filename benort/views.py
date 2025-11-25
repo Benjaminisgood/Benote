@@ -41,6 +41,7 @@ from .config import (
     AI_BIB_PROMPT,
     AI_PROMPTS,
     COMPONENT_LIBRARY,
+    DEFAULT_EMBEDDING_MODEL,
     LEARNING_ASSISTANT_DEFAULT_PROMPTS,
     UI_THEME,
     OPENAI_TTS_MODEL,
@@ -77,6 +78,7 @@ from .workspace import (
     sync_remote_workspace,
     unlock_workspace,
 )
+from .rag import RagUnavailableError, ensure_markdown_index, search_markdown
 
 bp = Blueprint("benort", __name__)
 
@@ -100,6 +102,16 @@ _HTML_SRC_RE = re.compile(r'\bsrc=["\']([^"\']+)["\']', re.IGNORECASE)
 _HTML_HREF_RE = re.compile(r'\bhref=["\']([^"\']+)["\']', re.IGNORECASE)
 
 _IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.heic', '.heif'}
+
+_RAG_CHUNK_SIZE = 900
+_RAG_CHUNK_OVERLAP = 180
+_RAG_TOP_K = 5
+
+_ASSISTANT_SYSTEM_PROMPT = (
+    "You are a concise, detail-oriented private assistant for my Benort workspace. "
+    "Prefer answers grounded in the provided Markdown snippets. "
+    "If context is missing or insufficient, be explicit that you are replying without RAG and avoid fabricating workspace details."
+)
 
 
 def _build_markdown_callout_renderer(name: str):
@@ -898,15 +910,45 @@ def _resolve_local_asset_path(
         return candidate
 
 
-def _resolve_llm_for_request(payload: Optional[dict] = None, project: Optional[dict] = None) -> tuple[dict, dict]:
-    """组合请求体与项目配置，解析出最终的 LLM 配置与请求头。"""
-
+def _extract_llm_preference(payload: Optional[dict], project: Optional[dict], usage: str) -> tuple[Optional[str], Optional[str]]:
     provider_override = None
     model_override = None
     if isinstance(payload, dict):
-        provider_override = payload.get("llmProvider") or payload.get("llm_provider")
-        model_override = payload.get("llmModel") or payload.get("llm_model")
-    config = resolve_llm_config(provider_id=provider_override, project=project, model=model_override)
+        llm_payload = payload.get("llm") if isinstance(payload.get("llm"), dict) else {}
+        if usage == "embedding":
+            provider_override = llm_payload.get("embedding", {}).get("provider") if isinstance(llm_payload.get("embedding"), dict) else None
+            model_override = llm_payload.get("embedding", {}).get("model") if isinstance(llm_payload.get("embedding"), dict) else None
+            provider_override = provider_override or payload.get("llmEmbeddingProvider")
+            model_override = model_override or payload.get("llmEmbeddingModel") or payload.get("embeddingModel") or payload.get("embedding_model")
+        elif usage == "tts":
+            provider_override = llm_payload.get("tts", {}).get("provider") if isinstance(llm_payload.get("tts"), dict) else None
+            model_override = llm_payload.get("tts", {}).get("model") if isinstance(llm_payload.get("tts"), dict) else None
+            provider_override = provider_override or payload.get("llmTtsProvider")
+            model_override = model_override or payload.get("llmTtsModel") or payload.get("ttsModel") or payload.get("tts_model")
+        else:
+            provider_override = llm_payload.get("chat", {}).get("provider") if isinstance(llm_payload.get("chat"), dict) else None
+            model_override = llm_payload.get("chat", {}).get("model") if isinstance(llm_payload.get("chat"), dict) else None
+            provider_override = provider_override or payload.get("llmProvider") or payload.get("llm_provider")
+            model_override = model_override or payload.get("llmModel") or payload.get("llm_model")
+    if provider_override:
+        provider_override = str(provider_override).strip()
+    if model_override:
+        model_override = str(model_override).strip()
+    return provider_override or None, model_override or None
+
+
+def _resolve_llm_for_request(payload: Optional[dict] = None, project: Optional[dict] = None, usage: str = "chat") -> tuple[dict, dict]:
+    """组合请求体与项目配置，解析出最终的 LLM 配置与请求头（按用途区分）。"""
+
+    provider_override, model_override = _extract_llm_preference(payload, project, usage)
+    config = resolve_llm_config(
+        provider_id=provider_override,
+        project=project,
+        model=model_override if usage == "chat" else None,
+        embedding_model=model_override if usage == "embedding" else None,
+        tts_model=model_override if usage == "tts" else None,
+        usage=usage,
+    )
     headers = build_chat_headers(config)
     return config, headers
 
@@ -936,10 +978,99 @@ def _resolve_llm_timeout(config: dict, fallback: int) -> int:
     if resolved <= 0:
         return fallback
     return resolved
-    candidate = _safe_join(resources_folder, trimmed)
-    if candidate and os.path.exists(candidate):
-        return candidate
-    return None
+
+
+def _resolve_embedding_model(payload: Optional[dict], llm_config: dict) -> str:
+    """Pick an embedding model from request, provider, or defaults."""
+
+    if isinstance(payload, dict):
+        candidate = payload.get("embeddingModel") or payload.get("embedding_model")
+        if candidate:
+            trimmed = str(candidate).strip()
+            if trimmed:
+                return trimmed
+    if llm_config.get("embedding_model"):
+        candidate = str(llm_config["embedding_model"]).strip()
+        if candidate:
+            return candidate
+    if llm_config.get("default_embedding_model"):
+        candidate = str(llm_config["default_embedding_model"]).strip()
+        if candidate:
+            return candidate
+    return DEFAULT_EMBEDDING_MODEL
+
+
+def _resolve_tts_model(payload: Optional[dict], llm_config: dict, default: str = "tts-1") -> str:
+    """Pick a TTS model from request, provider, or defaults."""
+
+    if isinstance(payload, dict):
+        candidate = payload.get("ttsModel") or payload.get("tts_model")
+        if candidate:
+            trimmed = str(candidate).strip()
+            if trimmed:
+                return trimmed
+    for key in ("tts_model", "default_tts_model"):
+        if llm_config.get(key):
+            trimmed = str(llm_config[key]).strip()
+            if trimmed:
+                return trimmed
+    return default
+
+
+def _format_assistant_user_message(message: str, contexts: list[dict]) -> str:
+    """Build user message with optional RAG context list."""
+
+    context_lines: list[str] = []
+    for ctx in contexts:
+        text = _truncate_text(ctx.get("text") or "", 1200)
+        label = ctx.get("label") or f"Page {int(ctx.get('pageIdx') or 0) + 1}"
+        page_idx = ctx.get("pageIdx")
+        page_tag = f"(第 {int(page_idx) + 1} 页)" if isinstance(page_idx, int) else ""
+        context_lines.append(f"[{ctx.get('rank', '?')}] {label} {page_tag}\n{text}")
+    context_block = "\n\n".join(context_lines)
+    if context_block:
+        return (
+            "以下是我工作区中最相关的 Markdown 片段（按相关度排序）。"
+            "回答时优先引用它们，若仍不足以回答，请说明缺少上下文后再补充推理。\n\n"
+            f"{context_block}\n\n用户问题：\n{message}"
+        )
+    return (
+        "未检索到可用的工作区上下文。请直接回答用户问题，但不要捏造具体的工作区内容。\n\n"
+        f"用户问题：\n{message}"
+    )
+
+
+def _build_rag_contexts(
+    query: str,
+    workspace_id: str,
+    package: BenortPackage,
+    llm_config: dict,
+    headers: dict,
+    embedding_model: str,
+    top_k: int,
+) -> tuple[list[dict], bool]:
+    cache_dir = _workspace_cache_dir(workspace_id) / "rag"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    index, manifest, rebuilt = ensure_markdown_index(
+        workspace_id,
+        package,
+        llm_config,
+        headers,
+        cache_dir,
+        embedding_model=embedding_model,
+        chunk_size=_RAG_CHUNK_SIZE,
+        overlap=_RAG_CHUNK_OVERLAP,
+    )
+    contexts = search_markdown(
+        query,
+        index,
+        manifest,
+        llm_config,
+        headers,
+        embedding_model=embedding_model,
+        top_k=top_k,
+    )
+    return contexts, rebuilt
 
 
 def _get_project_template_header(project: Optional[dict]) -> str:
@@ -979,19 +1110,65 @@ def _describe_template_constraints(project: Optional[dict]) -> tuple[str, str]:
 
 @bp.route("/llm/test", methods=["POST"])
 def llm_connectivity_test():
-    """向选定的 LLM 发送最短提示，验证接口可用性。"""
+    """向选定的能力（chat/embedding/tts）发送最短请求，验证接口可用性。"""
 
     data = request.get_json(silent=True) or {}
+    usage = str(data.get("type") or "chat").strip().lower()
+    if usage not in {"chat", "embedding", "tts"}:
+        usage = "chat"
+
     _, _, project, error = _require_workspace_project_response()
     if error:
         return error
-    llm_config, headers = _resolve_llm_for_request(data, project=project)
+    llm_config, headers = _resolve_llm_for_request(data, project=project, usage=usage)
     if not llm_config.get("api_key"):
         return api_error(_llm_missing_key_error(llm_config), 500)
+
+    started = time.perf_counter()
+    if usage == "embedding":
+        model_name = llm_config.get("embedding_model")
+        if not model_name:
+            return api_error("未配置可用的 embedding 模型", 500)
+        try:
+            resp = requests.post(
+                llm_config["embedding_endpoint"],
+                headers=headers,
+                json={"model": model_name, "input": ["ping"]},
+                timeout=_resolve_llm_timeout(llm_config, 15),
+            )
+        except Exception as exc:  # pragma: no cover
+            return api_error(str(exc), 500)
+        latency_ms = (time.perf_counter() - started) * 1000.0
+        if resp.status_code != 200:
+            return api_error(f"{_llm_provider_label(llm_config)} Embedding API错误: {resp.text}", 500)
+        return api_success({"result": {"latencyMs": latency_ms, "preview": "ok"}})
+
+    if usage == "tts":
+        model_name = llm_config.get("tts_model") or OPENAI_TTS_MODEL
+        try:
+            resp = requests.post(
+                llm_config.get("tts_endpoint") or llm_config.get("endpoint"),
+                headers=headers,
+                json={
+                    "model": model_name,
+                    "input": "ping",
+                    "voice": llm_config.get("tts_voice") or OPENAI_TTS_VOICE,
+                    "response_format": llm_config.get("tts_response_format") or OPENAI_TTS_RESPONSE_FORMAT,
+                    "speed": llm_config.get("tts_speed") or OPENAI_TTS_SPEED,
+                },
+                timeout=_resolve_llm_timeout(llm_config, 15),
+            )
+        except Exception as exc:  # pragma: no cover
+            return api_error(str(exc), 500)
+        latency_ms = (time.perf_counter() - started) * 1000.0
+        if resp.status_code != 200:
+            return api_error(f"{_llm_provider_label(llm_config)} TTS API错误: {resp.text}", 500)
+        return api_success({"result": {"latencyMs": latency_ms, "preview": "ok"}})
+
+    # chat
     model_name = llm_config.get("model")
     if not model_name:
         return api_error("未配置可用的聊天模型", 500)
-
     payload = {
         "model": model_name,
         "messages": [
@@ -1001,7 +1178,6 @@ def llm_connectivity_test():
         "max_tokens": 2,
         "temperature": 0,
     }
-    started = time.perf_counter()
     try:
         resp = requests.post(
             llm_config["endpoint"],
@@ -1045,7 +1221,7 @@ def ai_optimize():
     markdown_text = str(data.get("markdown") or "")
     script_text = str(data.get("script") or "")
 
-    llm_config, headers = _resolve_llm_for_request(data, project=project)
+    llm_config, headers = _resolve_llm_for_request(data, project=project, usage="chat")
     if not llm_config.get("api_key"):
         return api_error(_llm_missing_key_error(llm_config), 500)
     model_name = llm_config.get("model")
@@ -1115,7 +1291,7 @@ def ai_bib():
     if error:
         return error
 
-    llm_config, headers = _resolve_llm_for_request(data, project=project)
+    llm_config, headers = _resolve_llm_for_request(data, project=project, usage="chat")
     if not llm_config.get("api_key"):
         return api_error(_llm_missing_key_error(llm_config), 500)
     model_name = llm_config.get("model")
@@ -1152,6 +1328,103 @@ def ai_bib():
     if entry:
         return api_success({"entry": entry})
     return api_success({"bib": content.strip()})
+
+
+@bp.route("/assistant/query", methods=["POST"])
+def assistant_query():
+    """AI 助理：可选 RAG（当前工作区 Markdown）。"""
+
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message") or data.get("prompt") or "").strip()
+    if not message:
+        return api_error("消息不能为空", 400)
+
+    workspace_id, package, project, error = _require_workspace_project_response()
+    if error:
+        return error
+    llm_config, headers = _resolve_llm_for_request(data, project=project, usage="chat")
+    if not llm_config.get("api_key"):
+        return api_error(_llm_missing_key_error(llm_config), 500)
+    model_name = llm_config.get("model")
+    if not model_name:
+        return api_error("未配置可用的聊天模型", 500)
+
+    top_k = _RAG_TOP_K
+    top_k_raw = data.get("topK") or data.get("k")
+    if top_k_raw is not None:
+        try:
+            top_k_val = int(top_k_raw)
+            top_k = max(1, min(top_k_val, 12))
+        except (TypeError, ValueError):
+            pass
+
+    embedding_config, embedding_headers = _resolve_llm_for_request(data, project=project, usage="embedding")
+    embedding_model = _resolve_embedding_model(data, embedding_config)
+    use_rag_flag = _parse_bool_flag(data.get("useRag"))
+    use_rag = True if use_rag_flag is None else bool(use_rag_flag)
+
+    contexts: list[dict] = []
+    rag_rebuilt = False
+    rag_used = False
+    rag_notice = None
+
+    if use_rag:
+        try:
+            contexts, rag_rebuilt = _build_rag_contexts(
+                message,
+                workspace_id,
+                package,
+                embedding_config,
+                embedding_headers,
+                embedding_model,
+                top_k,
+            )
+            rag_used = bool(contexts)
+            if not contexts:
+                rag_notice = "未命中相关 Markdown 片段，已直接与 LLM 对话。"
+        except RagUnavailableError as exc:
+            rag_notice = str(exc)
+            use_rag = False
+        except Exception as exc:  # pragma: no cover - network/faiss errors
+            return api_error(f"RAG 查询失败: {exc}", 500)
+
+    payload = {
+        "model": model_name,
+        "messages": [
+            {"role": "system", "content": _ASSISTANT_SYSTEM_PROMPT},
+            {"role": "user", "content": _format_assistant_user_message(message, contexts if use_rag else [])},
+        ],
+        "temperature": 0.35,
+    }
+    try:
+        resp = requests.post(
+            llm_config["endpoint"],
+            headers=headers,
+            json=payload,
+            timeout=_resolve_llm_timeout(llm_config, 60),
+        )
+    except Exception as exc:  # pragma: no cover
+        return api_error(str(exc), 500)
+
+    if resp.status_code != 200:
+        return api_error(f"{_llm_provider_label(llm_config)} API错误: {resp.text}", 500)
+
+    try:
+        result = resp.json()["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, ValueError, TypeError) as exc:  # pragma: no cover
+        return api_error(f"解析 LLM 响应失败: {exc}", 500)
+
+    return api_success(
+        {
+            "result": result,
+            "contexts": contexts if use_rag else [],
+            "ragUsed": use_rag and rag_used,
+            "ragNotice": rag_notice,
+            "ragRebuilt": rag_rebuilt,
+            "llmModel": model_name,
+            "embeddingModel": embedding_model,
+        }
+    )
 
 
 def _list_workspace_learning_prompts(package: BenortPackage) -> tuple[list[dict], dict[str, dict], set[str]]:
@@ -1741,7 +2014,7 @@ def learn_query():
     truncated_context = _truncate_text(context, 3000) or "（无额外上下文）"
     user_prompt = _format_learning_user_message(template, truncated_content, truncated_context)
 
-    llm_config, headers = _resolve_llm_for_request(data, project=project_for_llm)
+    llm_config, headers = _resolve_llm_for_request(data, project=project_for_llm, usage="chat")
     if not llm_config.get("api_key"):
         return api_error(_llm_missing_key_error(llm_config), 500)
     model_name = llm_config.get("model")
@@ -2257,29 +2530,30 @@ def _extract_page_label(idx: int, page: dict) -> str:
     return f"第 {idx + 1} 页"
 
 
-def _request_tts_audio_bytes(normalized: str):
-    """调用 OpenAI TTS API，将文本转换为语音字节。"""
+def _request_tts_audio_bytes(
+    normalized: str,
+    llm_config: dict,
+    headers: dict,
+    tts_model: str,
+):
+    """调用 TTS API，将文本转换为语音字节。"""
 
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = llm_config.get("api_key") or os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        return None, "未设置OPENAI_API_KEY环境变量", 500
+        return None, "未设置可用的 TTS API Key", 500
 
+    endpoint = llm_config.get("tts_endpoint") or "https://api.openai.com/v1/audio/speech"
+    request_headers = dict(headers or {})
+    request_headers["Content-Type"] = "application/json"
+    payload = {
+        "model": tts_model or OPENAI_TTS_MODEL,
+        "input": normalized,
+        "voice": llm_config.get("tts_voice") or OPENAI_TTS_VOICE,
+        "response_format": llm_config.get("tts_response_format") or OPENAI_TTS_RESPONSE_FORMAT,
+        "speed": llm_config.get("tts_speed") or OPENAI_TTS_SPEED,
+    }
     try:
-        resp = requests.post(
-            "https://api.openai.com/v1/audio/speech",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": OPENAI_TTS_MODEL,
-                "input": normalized,
-                "voice": OPENAI_TTS_VOICE,
-                "response_format": OPENAI_TTS_RESPONSE_FORMAT,
-                "speed": OPENAI_TTS_SPEED,
-            },
-            timeout=120,
-        )
+        resp = requests.post(endpoint, headers=request_headers, json=payload, timeout=_resolve_llm_timeout(llm_config, 120))
     except Exception as exc:  # pragma: no cover - 网络错误
         return None, str(exc), 500
 
@@ -2287,10 +2561,20 @@ def _request_tts_audio_bytes(normalized: str):
         return resp.content, None, 200
 
     status = resp.status_code if resp.status_code >= 400 else 500
-    return None, f"OpenAI TTS错误: {resp.text}", status
+    provider_label = _llm_provider_label(llm_config)
+    return None, f"{provider_label} TTS错误: {resp.text}", status
 
 
-def _export_tts_audio_file(text: str, audio_folder: str, base_name: str, download_name: str, empty_error: str):
+def _export_tts_audio_file(
+    text: str,
+    audio_folder: str,
+    base_name: str,
+    download_name: str,
+    empty_error: str,
+    llm_config: dict,
+    headers: dict,
+    tts_model: str,
+):
     """将讲稿文本转换为语音文件并返回下载响应。"""
 
     normalized = str(text or "")
@@ -2315,7 +2599,7 @@ def _export_tts_audio_file(text: str, audio_folder: str, base_name: str, downloa
         except Exception:
             pass
 
-    audio_bytes, error_message, status_code = _request_tts_audio_bytes(normalized)
+    audio_bytes, error_message, status_code = _request_tts_audio_bytes(normalized, llm_config, headers, tts_model)
     if not audio_bytes:
         return jsonify({"success": False, "error": error_message}), status_code
 
@@ -2421,7 +2705,20 @@ def export_audio():
     scripts = [str(p.get("script", "")) for p in pages if isinstance(p, dict)]
     merged = "\n\n".join([n.strip() for n in scripts if n and n.strip()])
     audio_folder = _workspace_cache_dir(workspace_id) / "audio"
-    return _export_tts_audio_file(merged, str(audio_folder), 'all_notes', 'all_notes.mp3', '没有可用的笔记内容')
+    llm_config, headers = _resolve_llm_for_request({}, project=project, usage="tts")
+    if not llm_config.get("api_key"):
+        return api_error(_llm_missing_key_error(llm_config), 500)
+    tts_model = _resolve_tts_model({}, llm_config, OPENAI_TTS_MODEL)
+    return _export_tts_audio_file(
+        merged,
+        str(audio_folder),
+        'all_notes',
+        'all_notes.mp3',
+        '没有可用的笔记内容',
+        llm_config,
+        headers,
+        tts_model,
+    )
 
 
 @bp.route("/export_page_audio", methods=["GET"])
@@ -2453,8 +2750,20 @@ def export_page_audio():
     audio_folder = _workspace_cache_dir(workspace_id) / 'audio'
     base_name = f'page_{page_idx + 1}_script'
     download_name = f'{base_name}.mp3'
-
-    return _export_tts_audio_file(script, str(audio_folder), base_name, download_name, '当前页没有讲稿内容')
+    llm_config, headers = _resolve_llm_for_request({}, project=project, usage="tts")
+    if not llm_config.get("api_key"):
+        return api_error(_llm_missing_key_error(llm_config), 500)
+    tts_model = _resolve_tts_model({}, llm_config, OPENAI_TTS_MODEL)
+    return _export_tts_audio_file(
+        script,
+        str(audio_folder),
+        base_name,
+        download_name,
+        '当前页没有讲稿内容',
+        llm_config,
+        headers,
+        tts_model,
+    )
 
 
 @bp.route("/tts", methods=["POST"])
@@ -2467,8 +2776,14 @@ def generate_tts_preview():
     if not normalized.strip():
         return jsonify({"success": False, "error": "文本内容不能为空"}), 400
 
-    workspace_id = _workspace_id_from_request() or "global_preview"
-    audio_folder = _workspace_cache_dir(workspace_id) / "audio"
+    workspace_id, package, locked = _resolve_workspace_context()
+    if locked:
+        return _workspace_locked_response()
+    project = None
+    if package:
+        project = package.export_project()
+    workspace_label = workspace_id or "global_preview"
+    audio_folder = _workspace_cache_dir(workspace_label) / "audio"
     audio_folder.mkdir(parents=True, exist_ok=True)
     content_hash = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
     audio_path = audio_folder / f"tts_preview_{content_hash}.mp3"
@@ -2484,7 +2799,11 @@ def generate_tts_preview():
             except Exception:
                 pass
 
-    audio_bytes, error_message, status_code = _request_tts_audio_bytes(normalized)
+    llm_config, headers = _resolve_llm_for_request(payload, project=project, usage="tts")
+    if not llm_config.get("api_key"):
+        return api_error(_llm_missing_key_error(llm_config), 500)
+    tts_model = _resolve_tts_model(payload, llm_config, OPENAI_TTS_MODEL)
+    audio_bytes, error_message, status_code = _request_tts_audio_bytes(normalized, llm_config, headers, tts_model)
     if not audio_bytes:
         return jsonify({"success": False, "error": error_message}), status_code
 

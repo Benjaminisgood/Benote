@@ -17,6 +17,8 @@ dependencies = [
     "werkzeug==3.0.1",
     "gunicorn==21.2.0",
     "requests==2.31.0",
+    "numpy>=1.26.4,<2.0.0",
+    "faiss-cpu==1.8.0",
     "pyyaml==6.0.1",
     "ruamel.yaml==0.18.15",
     "oss2==2.18.6",

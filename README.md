@@ -16,6 +16,7 @@ Benort 是一个围绕 LaTeX Beamer 演示创作构建的全栈平台：后端�
   - 页面级别的 LaTeX/Markdown/Script 优化按钮；
   - “AI 学习”支持后台运行，LLM 完成后结果会自动以弹窗方式出现，可立即收藏、分类或一键写入当前页面；
   - “AI 复习”面板可以按分类 / 收藏 / 关键词检索所有历史学习记录，收藏的内容会长期保留。
+  - **AI 助理（可选 RAG）**：导航栏 “AI助理” 支持直接对话；勾选“使用 RAG”后会检索当前已解锁工作区的 Markdown 笔记（仅索引 `.benort` 内的 Markdown，不上传附件/LaTeX），命中片段会随回答返回。
 - **语音与音频缓存**：支持使用 OpenAI TTS 生成整套讲稿或某页脚本的 MP3，并自动缓存到 `.benort` 容器中。
 - **模板体系**：内置 `temps/` 目录的 LaTeX/Markdown 模板库，可在界面上套用并增补自定义段落。
 - **访问加密**：每个 `.benort` 工作区都可以设置访问密码，密码会以 `projectSecurity` 形式保存在容器的 `meta` 表中；密码留空即视为未加密，任何人都可直接打开。
@@ -148,6 +149,16 @@ gunicorn -w 4 -b 0.0.0.0:5555 benort:app
 | `flask --app benort run` | 开发模式启动 |
 | `gunicorn benort:app` | 生产部署示例 |
 | `python -m compileall benort` | 快速语法检查 |
+
+---
+
+### AI 助理 & RAG
+
+- 范围与缓存：仅索引当前已解锁 `.benort` 的 Markdown 笔记，索引与向量存放在本机临时目录，不会上传。
+- 默认向量化：使用当前 LLM 提供方的 embedding 接口（默认 OpenAI `text-embedding-3-large`，路径 `/embeddings`）。不会在本机跑模型，除非你把 base_url 指向自己的服务。
+- 自定义：可通过环境变量覆写 `LLM_BASE_URL`、`LLM_EMBEDDING_PATH`（默认 `/embeddings`）、`LLM_EMBEDDING_MODEL`、`LLM_PROVIDER`、`LLM_CHAT_PATH`、`LLM_MODEL` 等；前端请求也会带上 provider/model。
+- 前端开关：导航栏 “AI助理” -> 勾/不勾 “使用 RAG” 切换是否检索笔记；未命中上下文自动回退为普通对话。
+- 配额提醒：所选 provider 的 API Key 需有可用额度，否则会返回 `insufficient_quota`。
 
 ---
 

@@ -301,12 +301,19 @@ FALLBACK_MARKDOWN_TEMPLATE: dict[str, str] = {
     "wrapperClass": "markdown-note",
 }
 
-# OpenAI ChatCompletion 相关配置
-OPENAI_CHAT_COMPLETIONS_MODEL = "gpt-4o"
+# OpenAI ChatCompletion / Embedding / TTS 相关配置（支持分用途 env）
 OPENAI_API_BASE_URL = os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
-OPENAI_CHAT_PATH = os.environ.get("OPENAI_CHAT_PATH", "/chat/completions")
+OPENAI_CHAT_COMPLETIONS_MODEL = os.environ.get("LLM_CHAT_MODEL", os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o"))
+OPENAI_CHAT_PATH = os.environ.get("LLM_CHAT_PATH", os.environ.get("OPENAI_CHAT_PATH", "/chat/completions"))
+DEFAULT_EMBEDDING_MODEL = os.environ.get("LLM_EMBEDDING_MODEL", os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large"))
+DEFAULT_EMBEDDING_PATH = os.environ.get("LLM_EMBEDDING_PATH", "/embeddings")
+DEFAULT_TTS_MODEL = os.environ.get("LLM_TTS_MODEL", os.environ.get("OPENAI_TTS_MODEL", "tts-1"))
+DEFAULT_TTS_PATH = os.environ.get("LLM_TTS_PATH", "/audio/speech")
+DEFAULT_CHAT_BASE_URL = os.environ.get("LLM_CHAT_BASE_URL", OPENAI_API_BASE_URL)
+DEFAULT_EMBEDDING_BASE_URL = os.environ.get("LLM_EMBEDDING_BASE_URL", OPENAI_API_BASE_URL)
+DEFAULT_TTS_BASE_URL = os.environ.get("LLM_TTS_BASE_URL", OPENAI_API_BASE_URL)
 
-# ChatAnywhere ChatCompletion 相关配置
+# ChatAnywhere ChatCompletion 相关配置（保持兼容但可被 LLM_* 覆盖）
 CHATANYWHERE_API_BASE_URL = os.environ.get("CHAT_ANYWHERE_BASE_URL", "https://api.chatanywhere.tech/v1")
 CHATANYWHERE_CHAT_PATH = os.environ.get("CHAT_ANYWHERE_CHAT_PATH", "/chat/completions")
 CHATANYWHERE_DEFAULT_MODEL = os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-4o")
@@ -316,15 +323,30 @@ LLM_PROVIDERS: dict[str, dict[str, object]] = {
     "openai": {
         "id": "openai",
         "label": "OpenAI",
-        "base_url": OPENAI_API_BASE_URL,
+        "base_url": DEFAULT_CHAT_BASE_URL,
         "chat_path": OPENAI_CHAT_PATH,
+        "tts_path": DEFAULT_TTS_PATH,
+        "embedding_path": DEFAULT_EMBEDDING_PATH,
+        "embedding_base_url": DEFAULT_EMBEDDING_BASE_URL,
+        "tts_base_url": DEFAULT_TTS_BASE_URL,
         "default_model": OPENAI_CHAT_COMPLETIONS_MODEL,
+        "default_embedding_model": DEFAULT_EMBEDDING_MODEL,
+        "default_tts_model": DEFAULT_TTS_MODEL,
         "models": [
             "gpt-4o",
             "gpt-4o-mini",
             "gpt-4.1",
             "gpt-4.1-mini",
             "o4-mini",
+        ],
+        "embedding_models": [
+            "text-embedding-3-large",
+            "text-embedding-3-small",
+            "text-embedding-ada-002",
+        ],
+        "tts_models": [
+            "tts-1",
+            "tts-1-hd",
         ],
         "api_key_env": "OPENAI_API_KEY",
         "api_key_header": "Authorization",
@@ -337,9 +359,22 @@ LLM_PROVIDERS: dict[str, dict[str, object]] = {
         "label": "ChatAnywhere",
         "base_url": CHATANYWHERE_API_BASE_URL,
         "chat_path": CHATANYWHERE_CHAT_PATH,
+        "tts_path": DEFAULT_TTS_PATH,
+        "embedding_path": DEFAULT_EMBEDDING_PATH,
+        "embedding_base_url": CHATANYWHERE_API_BASE_URL,
+        "tts_base_url": CHATANYWHERE_API_BASE_URL,
         "default_model": CHATANYWHERE_DEFAULT_MODEL,
+        "default_embedding_model": DEFAULT_EMBEDDING_MODEL,
+        "default_tts_model": DEFAULT_TTS_MODEL,
         "models": [
             CHATANYWHERE_DEFAULT_MODEL,
+        ],
+        "embedding_models": [
+            DEFAULT_EMBEDDING_MODEL,
+            "text-embedding-3-small",
+        ],
+        "tts_models": [
+            DEFAULT_TTS_MODEL,
         ],
         "api_key_env": "CHAT_ANYWHERE_API_KEY",
         "api_key_header": "Authorization",
@@ -1093,6 +1128,10 @@ __all__ = [
     "OPENAI_CHAT_COMPLETIONS_MODEL",
     "OPENAI_API_BASE_URL",
     "OPENAI_CHAT_PATH",
+    "DEFAULT_EMBEDDING_MODEL",
+    "DEFAULT_EMBEDDING_PATH",
+    "DEFAULT_TTS_MODEL",
+    "DEFAULT_TTS_PATH",
     "CHATANYWHERE_API_BASE_URL",
     "CHATANYWHERE_CHAT_PATH",
     "CHATANYWHERE_DEFAULT_MODEL",

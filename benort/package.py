@@ -1268,6 +1268,7 @@ class BenortPackage:
             meta = {}
         resources_meta = self._list_project_resources()
         references = self._list_project_references()
+        llm_meta = meta.get("llm") if isinstance(meta.get("llm"), dict) else {}
         return {
             "project": meta.get("name") or self.path.stem,
             "pages": pages,
@@ -1276,6 +1277,7 @@ class BenortPackage:
             "resources": resources_meta,
             "bib": references,
             "attachments": [asset.name for asset in self.list_assets("attachment")],
+            "llm": llm_meta,
         }
 
     def save_project(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1295,6 +1297,8 @@ class BenortPackage:
         meta["updatedAt"] = time.time()
         if payload.get("project"):
             meta["name"] = payload["project"]
+        if isinstance(payload.get("llm"), dict):
+            meta["llm"] = payload.get("llm")
         self._set_meta("project", meta)
         return self.export_project()
 
