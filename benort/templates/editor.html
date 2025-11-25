@@ -4057,7 +4057,8 @@ function jumpToPage(targetIdx) {
   }
   let llmProviders = Array.isArray(window.BENORT_LLM_PROVIDERS) ? window.BENORT_LLM_PROVIDERS.slice() : [];
   function ensureDefaultProviders(){
-    const idSet = new Set((llmProviders || []).map(p => (p && typeof p.id === 'string') ? p.id.toLowerCase() : ''));
+    const list = Array.isArray(llmProviders) ? llmProviders : [];
+    const idSet = new Set(list.map(p => (p && typeof p.id === 'string') ? p.id.toLowerCase() : ''));
     const defaults = [
       {id: 'openai', label: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large', 'text-embedding-3-small'], ttsModels: ['tts-1', 'tts-1-hd']},
       {id: 'chatanywhere', label: 'ChatAnywhere', models: ['gpt-4o'], defaultModel: 'gpt-4o', defaultEmbeddingModel: 'text-embedding-3-large', defaultTtsModel: 'tts-1', embeddingModels: ['text-embedding-3-large', 'text-embedding-3-small'], ttsModels: ['tts-1']},
@@ -4065,10 +4066,12 @@ function jumpToPage(targetIdx) {
     ];
     defaults.forEach(p => {
       if(!idSet.has(p.id)){
-        llmProviders.push(p);
+        list.push(p);
         idSet.add(p.id);
       }
     });
+    llmProviders = list;
+    return llmProviders;
   }
   ensureDefaultProviders();
   const llmDefaultState = (window.BENORT_LLM_DEFAULT && typeof window.BENORT_LLM_DEFAULT === 'object') ? {...window.BENORT_LLM_DEFAULT} : {};
@@ -4236,6 +4239,7 @@ function jumpToPage(targetIdx) {
 
   function renderLlmProviderSelect(selectEl, activeId){
     if(!selectEl) return;
+    ensureDefaultProviders();
     const current = (activeId || '').toLowerCase();
     selectEl.innerHTML = '';
     llmProviders.forEach(provider => {
