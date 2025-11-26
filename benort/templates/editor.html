@@ -4081,10 +4081,10 @@ function jumpToPage(targetIdx) {
   const llmModalEl = document.getElementById('llmModal');
   const llmModalProviderList = document.getElementById('llm-modal-provider-list'); // legacy chat radio
   const llmModalModelSelect = document.getElementById('llm-modal-model-select'); // chat model select
-  const llmModalEmbeddingInput = document.getElementById('llm-modal-embedding-input');
-  const llmModalTtsInput = document.getElementById('llm-modal-tts-input');
-  const llmModalEmbeddingOptions = document.getElementById('llm-modal-embedding-options');
-  const llmModalTtsOptions = document.getElementById('llm-modal-tts-options');
+  const llmModalEmbeddingInput = document.getElementById('llm-embed-model');
+  const llmModalTtsInput = document.getElementById('llm-tts-model');
+  const llmModalEmbeddingOptions = document.getElementById('llm-embed-model-options');
+  const llmModalTtsOptions = document.getElementById('llm-tts-model-options');
   const llmModalApiEnv = document.getElementById('llm-modal-api-env');
   const llmModalApiStatus = document.getElementById('llm-modal-api-status');
   const llmModalEndpoint = document.getElementById('llm-modal-endpoint');
@@ -4092,14 +4092,10 @@ function jumpToPage(targetIdx) {
   const llmModalTestResult = document.getElementById('llm-modal-test-result');
   const llmChatProviderSelect = document.getElementById('llm-modal-provider-select-chat');
   const llmEmbedProviderSelect = document.getElementById('llm-embed-provider');
-  const llmEmbedModelInput = document.getElementById('llm-embed-model');
-  const llmEmbedModelOptions = document.getElementById('llm-embed-model-options');
   const llmEmbedEndpoint = document.getElementById('llm-embed-endpoint');
   const llmEmbedTestBtn = document.getElementById('llm-embed-test-btn');
   const llmEmbedTestResult = document.getElementById('llm-embed-test-result');
   const llmTtsProviderSelect = document.getElementById('llm-tts-provider');
-  const llmTtsModelInput = document.getElementById('llm-tts-model');
-  const llmTtsModelOptions = document.getElementById('llm-tts-model-options');
   const llmTtsEndpoint = document.getElementById('llm-tts-endpoint');
   const llmTtsTestBtn = document.getElementById('llm-tts-test-btn');
   const llmTtsTestResult = document.getElementById('llm-tts-test-result');
@@ -4211,24 +4207,25 @@ function jumpToPage(targetIdx) {
   }
 
   function updateLlmButtonLabel(){
-    const meta = getLlmProviderMeta(llmSettings && llmSettings.chatProvider);
-    const providerLabel = meta ? (meta.label || meta.id) : '--';
+    const chatMeta = getLlmProviderMeta(llmSettings && llmSettings.chatProvider);
+    const embedMeta = getLlmProviderMeta(llmSettings && llmSettings.embeddingProvider);
+    const ttsMeta = getLlmProviderMeta(llmSettings && llmSettings.ttsProvider);
+    const chatLabel = chatMeta ? (chatMeta.label || chatMeta.id) : '--';
+    const embedLabel = embedMeta ? (embedMeta.label || embedMeta.id) : '--';
+    const ttsLabel = ttsMeta ? (ttsMeta.label || ttsMeta.id) : '--';
+    const summary = `聊:${chatLabel} · 嵌:${embedLabel} · 音:${ttsLabel}`;
     if(llmProviderLabelEl){
-      llmProviderLabelEl.textContent = providerLabel || '--';
+      llmProviderLabelEl.textContent = summary;
     }
     if(llmManageBtn){
       const parts = [];
-      if(providerLabel && providerLabel !== '--') parts.push(providerLabel);
-      if(llmSettings && typeof llmSettings.chatModel === 'string' && llmSettings.chatModel.trim()){
-        parts.push(llmSettings.chatModel.trim());
-      }
-      if(llmSettings && typeof llmSettings.embeddingModel === 'string' && llmSettings.embeddingModel.trim()){
-        parts.push(`emb: ${llmSettings.embeddingModel.trim()}`);
-      }
-      if(llmSettings && typeof llmSettings.ttsModel === 'string' && llmSettings.ttsModel.trim()){
-        parts.push(`tts: ${llmSettings.ttsModel.trim()}`);
-      }
-      llmManageBtn.title = parts.length ? `当前模型：${parts.join(' · ')}` : '管理模型设置';
+      const chatModel = (llmSettings && typeof llmSettings.chatModel === 'string') ? llmSettings.chatModel.trim() : '';
+      const embedModel = (llmSettings && typeof llmSettings.embeddingModel === 'string') ? llmSettings.embeddingModel.trim() : '';
+      const ttsModel = (llmSettings && typeof llmSettings.ttsModel === 'string') ? llmSettings.ttsModel.trim() : '';
+      parts.push(`聊天: ${chatLabel}${chatModel ? ` / ${chatModel}` : ''}`);
+      parts.push(`Embedding: ${embedLabel}${embedModel ? ` / ${embedModel}` : ''}`);
+      parts.push(`TTS: ${ttsLabel}${ttsModel ? ` / ${ttsModel}` : ''}`);
+      llmManageBtn.title = parts.join(' · ');
     }
   }
 
@@ -4375,12 +4372,6 @@ function jumpToPage(targetIdx) {
       const path = meta && meta.chatPath ? meta.chatPath : '';
       const endpointText = `${base || ''}${path || ''}`.trim();
       llmModalEndpoint.textContent = endpointText ? `聊天接口：${endpointText}` : '';
-      if(meta && meta.embeddingPath){
-        llmModalEndpoint.textContent += ` | Embeddings: ${meta.embeddingPath}`;
-      }
-      if(meta && meta.ttsPath){
-        llmModalEndpoint.textContent += ` | TTS: ${meta.ttsPath}`;
-      }
     }
     if(llmModalTestBtn){
       llmModalTestBtn.disabled = !(meta && meta.hasApiKey);
