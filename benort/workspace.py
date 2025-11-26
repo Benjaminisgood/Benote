@@ -202,10 +202,9 @@ def _recover_workspace(workspace_id: str) -> WorkspaceHandle:
             display_name=record.get("display_name") or _derive_display_name(normalized),
             package=package,
         )
-
     handle.locked = bool(record.get("locked"))
     handle.unlocked = bool(record.get("unlocked", True))
-    _refresh_handle_security(handle, preserve_unlock=True)
+    _refresh_handle_security(handle, preserve_unlock=True, persist=True)
     return handle
 
 
@@ -274,16 +273,25 @@ def _register(handle: WorkspaceHandle) -> WorkspaceHandle:
     return handle
 
 
-def _refresh_handle_security(handle: WorkspaceHandle, *, preserve_unlock: bool = False) -> WorkspaceHandle:
+def _refresh_handle_security(
+    handle: WorkspaceHandle,
+    *,
+    preserve_unlock: bool = False,
+    persist: bool = False,
+) -> WorkspaceHandle:
+    prev_locked = handle.locked
+    prev_unlocked = getattr(handle, "unlocked", False)
     has_password = handle.package.has_workspace_password()
     handle.locked = has_password
     if not has_password:
         handle.unlocked = True
-        return handle
-    if preserve_unlock and getattr(handle, "unlocked", False):
-        handle.unlocked = True
     else:
-        handle.unlocked = False
+        if preserve_unlock and getattr(handle, "unlocked", False):
+            handle.unlocked = True
+        else:
+            handle.unlocked = False
+    if persist and (handle.locked != prev_locked or handle.unlocked != prev_unlocked):
+        _persist_workspace_record(handle)
     return handle
 
 
@@ -291,7 +299,7 @@ def list_workspaces() -> list[dict]:
     with _LOCK:
         handles = list(_REGISTRY.values())
         for handle in handles:
-            _refresh_handle_security(handle, preserve_unlock=True)
+            _refresh_handle_security(handle, preserve_unlock=True, persist=True)
         return [handle.to_dict() for handle in handles]
 
 
@@ -445,7 +453,7 @@ def set_workspace_password(workspace_id: str, new_password: str, current_passwor
     _ensure_password_permission(handle, current_password)
     handle.package.save_workspace_password(new_password)
     handle.unlocked = True
-    return _refresh_handle_security(handle, preserve_unlock=True)
+    return _refresh_handle_security(handle, preserve_unlock=True, persist=True)
 
 
 def clear_workspace_password(workspace_id: str, current_password: Optional[str] = None) -> WorkspaceHandle:
@@ -453,7 +461,7 @@ def clear_workspace_password(workspace_id: str, current_password: Optional[str] 
     _ensure_password_permission(handle, current_password)
     handle.package.clear_workspace_password()
     handle.unlocked = True
-    return _refresh_handle_security(handle, preserve_unlock=True)
+    return _refresh_handle_security(handle, preserve_unlock=True, persist=True)
 
 
 def unlock_workspace(workspace_id: str, password: str) -> WorkspaceHandle:
@@ -464,7 +472,7 @@ def unlock_workspace(workspace_id: str, password: str) -> WorkspaceHandle:
     if not handle.package.verify_workspace_password(normalized):
         raise PermissionError("密码不正确")
     handle.unlocked = True
-    return _refresh_handle_security(handle, preserve_unlock=True)
+    return _refresh_handle_security(handle, preserve_unlock=True, persist=True)
 
 
 def ensure_portable_workspace_loaded() -> Optional[WorkspaceHandle]:
