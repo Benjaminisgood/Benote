@@ -1822,6 +1822,27 @@ def _format_learning_user_message(template: str, content: str, context: str) -> 
         return f"{base_template}\n\n---\n{content}\n\n上下文：\n{safe_context}"
 
 
+def _normalize_temp_prompt_template(template: str) -> str:
+    """确保临时提示词里能带上学习内容和上下文占位符。"""
+
+    cleaned = (template or "").strip()
+    if not cleaned:
+        return ""
+    has_content = "{content}" in cleaned
+    has_context = "{context}" in cleaned
+    if has_content and has_context:
+        return cleaned
+    suffix_parts: list[str] = []
+    if not has_content:
+        suffix_parts.append("学习内容：\n{content}")
+    if not has_context:
+        suffix_parts.append("上下文：\n{context}")
+    if suffix_parts:
+        suffix = "\n\n".join(suffix_parts)
+        cleaned = f"{cleaned}\n\n{suffix}"
+    return cleaned
+
+
 def _extract_json_object(text: str) -> dict:
     """尽量从模型输出中解析出 JSON 对象。"""
 
@@ -1987,28 +2008,38 @@ def learn_query():
     context = str(data.get("context") or "").strip()
     prompt_id = str(data.get("promptId") or "").strip()
     prompt_name = str(data.get("promptName") or "").strip()
+    temp_template_raw = str(data.get("tempPromptTemplate") or data.get("tempPrompt") or "").strip()
+    temp_prompt_name = str(data.get("tempPromptName") or "").strip()
+    temp_system_prompt = str(data.get("tempSystemPrompt") or "").strip()
 
     _, package, project_for_llm, error = _require_workspace_project_response()
     if error:
         return error
     prompts, _ = _merge_learning_prompts(package)
 
-    if prompt_id and prompt_id != "__raw__":
+    template = (
+        "以下是需要学习或解析的内容，请用结构化 Markdown 给出详细讲解与建议：\n"
+        "{content}\n\n上下文信息：\n{context}"
+    )
+    system_text = _DEFAULT_LEARNING_SYSTEM_MESSAGE
+
+    if temp_template_raw:
+        prompt_id = "__temp__"
+        template = _normalize_temp_prompt_template(temp_template_raw)
+        prompt_name = temp_prompt_name or prompt_name or _truncate_text(temp_template_raw, 36) or "临时提示词"
+        if temp_system_prompt:
+            system_text = temp_system_prompt
+    elif prompt_id and prompt_id not in {"__raw__", "__temp__"}:
         prompt = _find_learning_prompt(prompts, prompt_id)
         if not prompt:
             return api_error("提示词不存在", 404)
         prompt_name = prompt.get("name", prompt_id)
-        system_text = prompt.get("system") or _DEFAULT_LEARNING_SYSTEM_MESSAGE
-        template = prompt.get("template") or "{content}\n\n上下文：\n{context}"
+        system_text = prompt.get("system") or system_text
+        template = prompt.get("template") or template
     else:
-        prompt_id = "__raw__"
+        prompt_id = "__temp__"
         if not prompt_name:
-            prompt_name = "无提示词"
-        system_text = _DEFAULT_LEARNING_SYSTEM_MESSAGE
-        template = (
-            "以下是需要学习或解析的内容，请用结构化 Markdown 给出详细讲解与建议：\n"
-            "{content}\n\n上下文信息：\n{context}"
-        )
+            prompt_name = temp_prompt_name or "临时提示词"
 
     truncated_content = _truncate_text(content, 4000)
     truncated_context = _truncate_text(context, 3000) or "（无额外上下文）"
@@ -2062,7 +2093,7 @@ def learn_record():
     if not content or not output:
         return api_error("content 和 output 必填", 400)
 
-    prompt_name = str(data.get("promptName") or "").strip() or "无提示词"
+    prompt_name = str(data.get("promptName") or "").strip() or "临时提示词"
     prompt_id = str(data.get("promptId") or "").strip()
     context = str(data.get("context") or "").strip()
     method = str(data.get("method") or data.get("learningMethod") or "").strip()

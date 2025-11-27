@@ -113,6 +113,15 @@ def _shared_registry_path(workspace_id: str) -> Path:
     return _SHARED_REGISTRY_DIR / f"{safe}.json"
 
 
+def _canonical_local_path(raw: Optional[str]) -> Optional[Path]:
+    if not raw:
+        return None
+    try:
+        return Path(_ensure_suffix(raw)).expanduser().resolve()
+    except Exception:
+        return None
+
+
 def _persist_workspace_record(handle: WorkspaceHandle) -> None:
     payload = {
         "workspace_id": handle.workspace_id,
@@ -154,6 +163,31 @@ def _remove_workspace_record(workspace_id: str) -> None:
         path.unlink(missing_ok=True)
     except Exception:
         pass
+
+
+def _shared_unlock_exists(handle: WorkspaceHandle) -> bool:
+    """Check if any other registry entry for the same source has been unlocked."""
+
+    target_remote = handle.remote_key or (handle.mode == "cloud" and handle.source) or None
+    target_path = _canonical_local_path(handle.local_path or handle.source)
+    if not target_remote and target_path is None:
+        return False
+
+    try:
+        for path in _SHARED_REGISTRY_DIR.glob("*.json"):
+            record = _load_workspace_record(path.stem)
+            if not record or not record.get("unlocked"):
+                continue
+            if target_remote:
+                if record.get("remote_key") == target_remote or record.get("source") == target_remote:
+                    return True
+            if target_path is not None:
+                candidate_path = _canonical_local_path(record.get("local_path") or record.get("source"))
+                if candidate_path and candidate_path == target_path:
+                    return True
+    except Exception:
+        return False
+    return False
 
 
 def _recover_workspace(workspace_id: str) -> WorkspaceHandle:
@@ -290,16 +324,28 @@ def _refresh_handle_security(
             handle.unlocked = True
         else:
             handle.unlocked = False
+        if handle.locked and not handle.unlocked and _shared_unlock_exists(handle):
+            handle.unlocked = True
     if persist and (handle.locked != prev_locked or handle.unlocked != prev_unlocked):
         _persist_workspace_record(handle)
     return handle
+
+
+def _sync_handle_security_from_registry(handle: WorkspaceHandle) -> WorkspaceHandle:
+    """Hydrate handle lock state from the shared registry for multi-process setups."""
+
+    record = _load_workspace_record(handle.workspace_id)
+    if record:
+        if record.get("unlocked") and not getattr(handle, "unlocked", False):
+            handle.unlocked = True
+    return _refresh_handle_security(handle, preserve_unlock=True, persist=True)
 
 
 def list_workspaces() -> list[dict]:
     with _LOCK:
         handles = list(_REGISTRY.values())
         for handle in handles:
-            _refresh_handle_security(handle, preserve_unlock=True, persist=True)
+            _sync_handle_security_from_registry(handle)
         return [handle.to_dict() for handle in handles]
 
 
@@ -417,13 +463,13 @@ def close_workspace(workspace_id: str) -> None:
 def get_workspace(workspace_id: str) -> WorkspaceHandle:
     with _LOCK:
         handle = _REGISTRY.get(workspace_id)
-    if not handle:
-        try:
-            recovered = _recover_workspace(workspace_id)
-        except WorkspaceNotFoundError:
-            raise
-        return _register(recovered)
-    return handle
+        if handle:
+            return _sync_handle_security_from_registry(handle)
+    try:
+        recovered = _recover_workspace(workspace_id)
+    except WorkspaceNotFoundError:
+        raise
+    return _register(recovered)
 
 
 def get_workspace_package(workspace_id: str) -> BenortPackage:

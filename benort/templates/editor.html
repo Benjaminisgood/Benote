@@ -330,6 +330,41 @@
     body.theme-dark .learning-prompt-card__meta {
       color: #cbd5f5;
     }
+    .ai-learn-temp-card {
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 1rem;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.94));
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.16);
+    }
+    body.theme-dark .ai-learn-temp-card {
+      border-color: rgba(71, 85, 105, 0.7);
+      background: radial-gradient(circle at 18% 12%, rgba(30, 41, 59, 0.94), rgba(15, 23, 42, 0.9));
+      box-shadow: 0 18px 44px rgba(8, 47, 73, 0.55);
+      color: #e2e8f0;
+    }
+    .ai-learn-temp-card h6 {
+      margin-bottom: 0.2rem;
+    }
+    .ai-learn-temp-card small {
+      color: #6b7280;
+    }
+    body.theme-dark .ai-learn-temp-card small {
+      color: #cbd5e1;
+    }
+    #ai-learn-temp-prompt {
+      min-height: 120px;
+      font-family: var(--bs-font-monospace);
+      background: rgba(255, 255, 255, 0.92);
+      border-color: rgba(148, 163, 184, 0.6);
+    }
+    body.theme-dark #ai-learn-temp-prompt {
+      background: rgba(17, 24, 39, 0.92);
+      border-color: rgba(71, 85, 105, 0.75);
+      color: #e2e8f0;
+    }
+    .ai-learn-temp-actions .btn {
+      min-width: 112px;
+    }
     .ai-assistant-answer {
       min-height: 160px;
       border-radius: 0.75rem;
@@ -1502,9 +1537,47 @@
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 0.9rem;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+    body.theme-dark #remote-workspace-list .list-group-item {
+      background: rgba(17, 24, 39, 0.88);
+      border-color: rgba(71, 85, 105, 0.55);
+      box-shadow: 0 12px 32px rgba(8, 47, 73, 0.4);
     }
     #remote-workspace-list .list-group-item .text-muted {
       margin-bottom: 0;
+    }
+    #remote-workspace-list .list-group-item .btn {
+      min-width: 96px;
+    }
+    #remoteWorkspaceModal {
+      --remote-surface: rgba(255, 255, 255, 0.94);
+      --remote-surface-dark: rgba(23, 32, 48, 0.94);
+      --remote-border: rgba(148, 163, 184, 0.42);
+      --remote-border-dark: rgba(71, 85, 105, 0.7);
+    }
+    #remoteWorkspaceModal .modal-content {
+      border-radius: 20px;
+      border: 1px solid var(--remote-border);
+      background: radial-gradient(circle at 22% 18%, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.95));
+      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.35);
+    }
+    body.theme-dark #remoteWorkspaceModal .modal-content {
+      background: radial-gradient(circle at 22% 18%, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.93));
+      border-color: var(--remote-border-dark);
+      color: #e2e8f0;
+      box-shadow: 0 30px 80px rgba(8, 47, 73, 0.55);
+    }
+    #remoteWorkspaceModal .workspace-form {
+      background: var(--remote-surface);
+      border-color: var(--remote-border);
+    }
+    body.theme-dark #remoteWorkspaceModal .workspace-form {
+      background: var(--remote-surface-dark);
+      border-color: var(--remote-border-dark);
     }
   </style>
 </head>
@@ -1952,11 +2025,23 @@
                 </div>
               </div>
               <hr class="my-3">
+              <div class="ai-learn-temp-card surface-card mb-3 p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                  <div>
+                    <h6 class="mb-1">临时提示词</h6>
+                    <small>不写死在提示库，自动套用“学习内容 / 上下文”，支持 {content} 与 {context} 占位符。</small>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 ai-learn-temp-actions">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" id="ai-learn-temp-reset">恢复默认</button>
+                    <button class="btn btn-sm btn-primary" type="button" id="ai-learn-run-temp">使用临时提示词</button>
+                  </div>
+                </div>
+                <textarea id="ai-learn-temp-prompt" class="form-control mt-3" rows="4" placeholder="例如：用费曼技巧讲解上述内容，拆成提纲、要点和练习题，并生成 3 个自测问题。支持 {content}/{context} 占位符。"></textarea>
+              </div>
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h6 class="mb-0">默认提示词</h6>
                 <div class="d-flex align-items-center gap-2">
                   <button class="btn btn-sm btn-outline-secondary" type="button" id="ai-learn-refresh-prompts">刷新</button>
-                  <button class="btn btn-sm btn-outline-dark" type="button" id="ai-learn-run-raw">无提示词</button>
                 </div>
               </div>
               <div id="ai-learn-default-prompts" class="d-flex flex-wrap gap-2 mt-2"></div>
@@ -1966,7 +2051,7 @@
               </div>
               <div id="ai-learn-custom-prompts" class="d-flex flex-column gap-2 mt-2"></div>
               <div class="alert alert-info my-3 mb-0">
-                点击任意提示词即可开始学习，进度会在后台运行。结果准备就绪后会自动弹窗提醒，你可以在弹窗中立即收藏、分类或应用到页面。
+                可直接填写上方“临时提示词”或点击任意提示词即可开始学习，进度会在后台运行。结果准备就绪后会自动弹窗提醒，你可以在弹窗中立即收藏、分类或应用到页面。
               </div>
             </div>
             <div class="modal-footer">
@@ -6262,6 +6347,21 @@ function jumpToPage(targetIdx) {
     });
   }
 
+  function applyColorMode(mode) {
+    const normalized = (mode || '').toLowerCase() === 'dark' ? 'dark' : 'light';
+    const isDark = normalized === 'dark';
+    document.body.classList.toggle('theme-dark', isDark);
+    document.body.setAttribute('data-bs-theme', normalized);
+    const remoteModal = document.getElementById('remoteWorkspaceModal');
+    if (remoteModal) {
+      remoteModal.setAttribute('data-bs-theme', normalized);
+    }
+    window.BENORT_UI_THEME = window.BENORT_UI_THEME || {};
+    window.BENORT_UI_THEME.color_mode = normalized;
+    applyNavbarTheme();
+    window.applyBenortColorMode = applyColorMode;
+  }
+
   function countMarkdownNewlines(text) {
     if (!text) return 0;
     const matches = text.match(/\r\n|\r|\n/g);
@@ -8217,7 +8317,10 @@ function syncMarkdownEditorToPreview(container) {
     });
   }
   updateModeToggleUI();
-  applyNavbarTheme();
+  const initialColorMode = document.body.classList.contains('theme-dark')
+    ? 'dark'
+    : (document.body.getAttribute('data-bs-theme') || (window.BENORT_UI_THEME && window.BENORT_UI_THEME.color_mode) || 'light');
+  applyColorMode(initialColorMode);
   
   document.getElementById('edit-template').onclick = function() {
     const mode = currentEditMode === 'markdown' ? 'markdown' : 'latex';
@@ -9231,6 +9334,8 @@ applyDefaultWorkspaceIfNeeded();
     },
   };
 
+  const DEFAULT_TEMP_LEARN_TEMPLATE = "请围绕以下内容提供结构化讲解、要点拆解和练习建议：\n{content}\n\n上下文：\n{context}";
+
   const aiAssistantState = {
     modal: null,
     running: false,
@@ -9319,6 +9424,33 @@ applyDefaultWorkspaceIfNeeded();
     } else {
       showStatus('当前页没有可用的上下文', 'warning', 2500);
     }
+  }
+
+  function normalizeTempPromptTemplate(raw) {
+    const template = (raw || '').trim();
+    if (!template) return '';
+    const hasContent = template.includes('{content}');
+    const hasContext = template.includes('{context}');
+    if (hasContent && hasContext) return template;
+    const suffix = [];
+    if (!hasContent) suffix.push('学习内容：\n{content}');
+    if (!hasContext) suffix.push('上下文：\n{context}');
+    return [template, ...suffix].join('\n\n');
+  }
+
+  function ensureTempPromptDefault(force = false) {
+    const textarea = document.getElementById('ai-learn-temp-prompt');
+    if (!textarea) return;
+    if (force || !textarea.value.trim()) {
+      textarea.value = DEFAULT_TEMP_LEARN_TEMPLATE;
+    }
+  }
+
+  function deriveTempPromptName(raw) {
+    const cleaned = (raw || '').trim().replace(/\s+/g, ' ');
+    if (!cleaned) return '临时提示词';
+    if (cleaned.length > 36) return `${cleaned.slice(0, 36)}…`;
+    return cleaned;
   }
 
   function toPlainPos(pos) {
@@ -9525,12 +9657,31 @@ applyDefaultWorkspaceIfNeeded();
         contentEl.value = '';
       }
     }
+    ensureTempPromptDefault(false);
     updateLearningContext(true);
     modal.show();
     loadLearningPrompts(false);
   }
 
-  async function runLearningPrompt(prompt, triggerBtn) {
+  function runTempLearningPrompt(triggerBtn) {
+    const textarea = document.getElementById('ai-learn-temp-prompt');
+    if (!textarea) return;
+    const rawTemplate = textarea.value.trim();
+    if (!rawTemplate) {
+      alert('请先填写临时提示词');
+      textarea.focus();
+      return;
+    }
+    const normalizedTemplate = normalizeTempPromptTemplate(rawTemplate);
+    const tempName = deriveTempPromptName(rawTemplate);
+    runLearningPrompt(
+      {id: '__temp__', name: tempName},
+      triggerBtn,
+      {tempTemplate: normalizedTemplate, tempName}
+    );
+  }
+
+  async function runLearningPrompt(prompt, triggerBtn, options = {}) {
     const contentEl = document.getElementById('ai-learn-content');
     if (!contentEl) return;
     const baseContent = contentEl.value.trim();
@@ -9540,8 +9691,11 @@ applyDefaultWorkspaceIfNeeded();
     }
     const contextEl = document.getElementById('ai-learn-context');
     const baseContext = contextEl ? contextEl.value.trim() : '';
-    const promptId = prompt ? prompt.id : '__raw__';
-    const promptName = prompt ? prompt.name : '无提示词';
+    const tempTemplate = options.tempTemplate || '';
+    const tempName = options.tempName || '';
+    const tempSystem = options.tempSystem || '';
+    const promptId = prompt && prompt.id ? prompt.id : '__temp__';
+    const promptName = prompt && prompt.name ? prompt.name : (tempName || '临时提示词');
     const applyMeta = captureLearningApplyMeta();
 
     const modal = ensureLearningModal();
@@ -9562,6 +9716,9 @@ applyDefaultWorkspaceIfNeeded();
         context: baseContext,
         promptId,
         promptName,
+        tempPromptTemplate: tempTemplate,
+        tempPromptName: tempName || promptName,
+        tempSystemPrompt: tempSystem,
       }));
       const res = await fetch(appendWorkspaceQuery('/learn/query'), {
         method: 'POST',
@@ -9594,7 +9751,7 @@ applyDefaultWorkspaceIfNeeded();
     } finally {
       if (triggerBtn) {
         triggerBtn.disabled = false;
-        triggerBtn.textContent = buttonLabel || (prompt ? prompt.name : '无提示词');
+        triggerBtn.textContent = buttonLabel || (prompt ? prompt.name : '临时提示词');
       }
     }
   }
@@ -10162,7 +10319,7 @@ applyDefaultWorkspaceIfNeeded();
       const titleBox = document.createElement('div');
       const title = document.createElement('h6');
       title.className = 'mb-1';
-      title.textContent = rec.promptName || '无提示词';
+      title.textContent = rec.promptName || '临时提示词';
       titleBox.appendChild(title);
       const meta = document.createElement('div');
       meta.className = 'text-muted small';
@@ -10426,14 +10583,22 @@ applyDefaultWorkspaceIfNeeded();
     aiLearnRefreshBtn.addEventListener('click', () => loadLearningPrompts(true));
   }
 
+  const aiLearnRunTempBtn = document.getElementById('ai-learn-run-temp');
+  if (aiLearnRunTempBtn) {
+    aiLearnRunTempBtn.addEventListener('click', () => runTempLearningPrompt(aiLearnRunTempBtn));
+  }
+
+  const aiLearnTempResetBtn = document.getElementById('ai-learn-temp-reset');
+  if (aiLearnTempResetBtn) {
+    aiLearnTempResetBtn.addEventListener('click', () => {
+      ensureTempPromptDefault(true);
+      showStatus('已恢复临时提示词模板', 'info', 2000);
+    });
+  }
+
   const aiLearnAddPromptBtn = document.getElementById('ai-learn-add-prompt');
   if (aiLearnAddPromptBtn) {
     aiLearnAddPromptBtn.addEventListener('click', () => openPromptEditor(null));
-  }
-
-  const aiLearnRawBtn = document.getElementById('ai-learn-run-raw');
-  if (aiLearnRawBtn) {
-    aiLearnRawBtn.addEventListener('click', () => runLearningPrompt(null, aiLearnRawBtn));
   }
 
   const aiLearnPromptSaveBtn = document.getElementById('ai-learn-prompt-save');
@@ -10501,6 +10666,7 @@ applyDefaultWorkspaceIfNeeded();
       if (contentEl) {
         contentEl.focus();
       }
+      ensureTempPromptDefault(false);
       updateLearningContext(true);
     });
   }
