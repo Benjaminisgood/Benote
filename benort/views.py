@@ -1478,6 +1478,8 @@ def _list_workspace_learning_records(package: BenortPackage) -> list[dict]:
         if row.get("category"):
             entry["category"] = row["category"]
         entry["favorite"] = bool(row.get("favorite"))
+        if row.get("review") is not None:
+            entry["review"] = row.get("review")
         group["entries"].append(entry)
     return list(grouped.values())
 
@@ -2099,6 +2101,7 @@ def learn_record():
     method = str(data.get("method") or data.get("learningMethod") or "").strip()
     category = str(data.get("category") or data.get("classification") or "").strip()
     favorite_raw = data.get("favorite")
+    review_payload = data.get("review")
     if isinstance(favorite_raw, str):
         favorite = favorite_raw.strip().lower() in {"1", "true", "yes", "on"}
     else:
@@ -2131,6 +2134,7 @@ def learn_record():
             "category": category,
             "favorite": favorite,
             "savedAt": time.time(),
+            "review": review_payload if isinstance(review_payload, dict) else None,
         }
     )
     return api_success({"savedAt": saved.get("savedAt"), "recordId": saved.get("id")})
@@ -2153,6 +2157,7 @@ def learn_list_records():
     if error:
         return error
     category_filter = str(request.args.get("category") or "").strip()
+    category_query = str(request.args.get("categoryQuery") or "").strip().lower()
     query = str(request.args.get("q") or "").strip().lower()
     favorite_flag = _parse_bool_flag(request.args.get("favorite"))
     records = package.list_learning_records()
@@ -2163,6 +2168,8 @@ def learn_list_records():
         if category:
             collected_categories.add(category)
         if category_filter and category != category_filter:
+            continue
+        if category_query and category_query not in category.lower():
             continue
         if favorite_flag is not None and bool(rec.get("favorite")) != favorite_flag:
             continue
@@ -2214,6 +2221,25 @@ def learn_update_or_delete_record(record_id: str):
         payload["category"] = data.get("category")
     if "output" in data:
         payload["output"] = data.get("output")
+    review_payload = data.get("review")
+    review_note = data.get("reviewNote")
+    review_effect = data.get("reviewEffect")
+    if review_payload is not None or review_note is not None or review_effect is not None:
+        base_review: dict[str, Any] = {}
+        if isinstance(review_payload, dict):
+            base_review = dict(review_payload)
+        else:
+            existing = package.get_learning_record_entry(record_id)
+            if existing and isinstance(existing.get("review"), dict):
+                base_review = dict(existing["review"])
+        if review_note is not None:
+            base_review["note"] = str(review_note or "").strip()
+        if review_effect is not None:
+            try:
+                base_review["effect"] = int(review_effect)
+            except (TypeError, ValueError):
+                base_review["effect"] = review_effect
+        payload["review"] = base_review
     if not payload:
         return api_error("没有可更新的字段", 400)
     updated = package.update_learning_record_entry(record_id, payload)

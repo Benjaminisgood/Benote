@@ -147,6 +147,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     "  category TEXT,"
     "  favorite INTEGER NOT NULL DEFAULT 0,"
     "  output TEXT NOT NULL,"
+    "  review_state TEXT,"
     "  saved_at REAL NOT NULL DEFAULT (strftime('%s','now'))"
     ");",
     "CREATE INDEX IF NOT EXISTS idx_page_latex_ord ON page_latex(idx);",
@@ -474,7 +475,7 @@ class BenortPackage:
         self._prune_learning_records()
         with self._lock:
             rows = self.conn.execute(
-                "SELECT id, input, context, prompt_id, prompt_name, method, category, favorite, output, saved_at "
+                "SELECT id, input, context, prompt_id, prompt_name, method, category, favorite, output, review_state, saved_at "
                 "FROM learning_records ORDER BY saved_at DESC"
             ).fetchall()
         records: list[dict] = []
@@ -490,10 +491,38 @@ class BenortPackage:
                     "category": row["category"],
                     "favorite": bool(row["favorite"]),
                     "output": row["output"],
+                    "review": _deserialize(row["review_state"]) if row["review_state"] else None,
                     "savedAt": row["saved_at"],
                 }
             )
         return records
+
+    def get_learning_record_entry(self, record_id: str) -> Optional[dict]:
+        record_id = (record_id or "").strip()
+        if not record_id:
+            return None
+        self._prune_learning_records()
+        with self._lock:
+            row = self.conn.execute(
+                "SELECT id, input, context, prompt_id, prompt_name, method, category, favorite, output, review_state, saved_at "
+                "FROM learning_records WHERE id = ?",
+                (record_id,),
+            ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row["id"],
+            "input": row["input"],
+            "context": row["context"],
+            "promptId": row["prompt_id"],
+            "promptName": row["prompt_name"],
+            "method": row["method"],
+            "category": row["category"],
+            "favorite": bool(row["favorite"]),
+            "output": row["output"],
+            "review": _deserialize(row["review_state"]) if row["review_state"] else None,
+            "savedAt": row["saved_at"],
+        }
 
     def save_learning_record_entry(self, record: dict) -> dict:
         record_id = str(record.get("id") or "").strip() or uuid.uuid4().hex
@@ -519,6 +548,10 @@ class BenortPackage:
             favorite_flag = favorite_raw.strip().lower() in {"1", "true", "yes", "on"}
         else:
             favorite_flag = bool(favorite_raw)
+        review_state_raw = record.get("review") or record.get("review_state")
+        review_state_value: str | None = None
+        if isinstance(review_state_raw, (dict, list)):
+            review_state_value = _serialize(review_state_raw)
         payload = {
             "id": record_id,
             "input": record.get("input", ""),
@@ -529,16 +562,17 @@ class BenortPackage:
             "category": category_value or None,
             "favorite": 1 if favorite_flag else 0,
             "output": record.get("output", ""),
+            "review_state": review_state_value,
             "saved_at": saved_value,
         }
         with self._lock:
             self.conn.execute(
-                "INSERT INTO learning_records (id, input, context, prompt_id, prompt_name, method, category, favorite, output, saved_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "INSERT INTO learning_records (id, input, context, prompt_id, prompt_name, method, category, favorite, output, review_state, saved_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(id) DO UPDATE SET input = excluded.input, context = excluded.context, "
                 "prompt_id = excluded.prompt_id, prompt_name = excluded.prompt_name, "
                 "method = excluded.method, category = excluded.category, favorite = excluded.favorite, "
-                "output = excluded.output, saved_at = excluded.saved_at",
+                "output = excluded.output, review_state = excluded.review_state, saved_at = excluded.saved_at",
                 (
                     payload["id"],
                     payload["input"],
@@ -549,6 +583,7 @@ class BenortPackage:
                     payload["category"],
                     payload["favorite"],
                     payload["output"],
+                    payload["review_state"],
                     payload["saved_at"],
                 ),
             )
@@ -560,6 +595,8 @@ class BenortPackage:
             result["method"] = payload["method"]
         if payload["category"]:
             result["category"] = payload["category"]
+        if payload["review_state"]:
+            result["review"] = _deserialize(payload["review_state"])
         self._prune_learning_records()
         return result
 
@@ -610,6 +647,12 @@ class BenortPackage:
             output_val = updates.get("output")
             if output_val is not None:
                 columns["output"] = str(output_val)
+        if "review" in updates:
+            review_state = updates.get("review")
+            if isinstance(review_state, (dict, list)):
+                columns["review_state"] = _serialize(review_state)
+            elif review_state is None:
+                columns["review_state"] = None
         if not columns:
             return None
         set_clause = ", ".join(f"{col} = ?" for col in columns.keys())
@@ -623,7 +666,7 @@ class BenortPackage:
             if cur.rowcount == 0:
                 return None
             row = self.conn.execute(
-                "SELECT id, input, context, prompt_id, prompt_name, method, category, favorite, output, saved_at "
+                "SELECT id, input, context, prompt_id, prompt_name, method, category, favorite, output, review_state, saved_at "
                 "FROM learning_records WHERE id = ?",
                 (record_id,),
             ).fetchone()
@@ -639,6 +682,7 @@ class BenortPackage:
             "category": row["category"],
             "favorite": bool(row["favorite"]),
             "output": row["output"],
+            "review": _deserialize(row["review_state"]) if row["review_state"] else None,
             "savedAt": row["saved_at"],
         }
 
@@ -720,6 +764,8 @@ class BenortPackage:
                 self.conn.execute("ALTER TABLE learning_records ADD COLUMN category TEXT")
             if "favorite" not in columns:
                 self.conn.execute("ALTER TABLE learning_records ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
+            if "review_state" not in columns:
+                self.conn.execute("ALTER TABLE learning_records ADD COLUMN review_state TEXT")
             self.conn.commit()
 
     def _table_exists(self, name: str) -> bool:
