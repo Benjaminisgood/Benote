@@ -2,7 +2,7 @@
 
 Benort 是一个围绕 LaTeX Beamer 演示创作构建的全栈平台：后端基于 Flask，前端使用单页 `editor.html` 整合 CodeMirror、PDF.js、Markdown 渲染与 Bootstrap 交互，同时对接主流 LLM、TTS 能力。除了传统的幻灯片编写，它也适合写讲稿、学术笔记甚至博客。
 
-最新版本已将所有“项目”存储迁移为 **`.benort` SQLite 容器工作区**。一个 `.benort` 文件就是完整的项目（页面、模板、附件、资源、学习记录等都封装进去），可以像 VS Code 打开文件夹一样随时切换，并支持本地与远程（OSS）双工作区。
+“项目”存储为 **`.benort` SQLite 容器工作区**。一个 `.benort` 文件就是完整的项目（页面、模板、附件、资源、学习记录等都封装进去），可以像 VS Code 打开文件夹一样随时切换，并支持本地与远程（OSS）双工作区。
 
 > 如果系统看到 `demo.benort` 旁边多了 `demo.benort-wal`/`demo.benort-shm`，那是 SQLite WAL 模式的正常产物，连接关闭或进行 checkpoint 后就会被自动清理。
 
@@ -68,10 +68,6 @@ Benort/
    OPENAI_API_KEY=sk-xxxx
 
    # UI 主题
-   BENORT_COLOR_MODE=dark
-   BENORT_NAVBAR_PRESET=modern
-   BENORT_NAVBAR_STYLE=palette
-   BENORT_NAVBAR_VARIANT=solid
 
    # OSS/远程工作区
    ALIYUN_OSS_ENDPOINT=oss-cn-hangzhou.aliyuncs.com
@@ -159,16 +155,6 @@ gunicorn -w 4 -b 0.0.0.0:5555 benort:app
 - 自定义：可通过环境变量覆写 `LLM_BASE_URL`、`LLM_EMBEDDING_PATH`（默认 `/embeddings`）、`LLM_EMBEDDING_MODEL`、`LLM_PROVIDER`、`LLM_CHAT_PATH`、`LLM_MODEL` 等；前端请求也会带上 provider/model。
 - 前端开关：导航栏 “AI助理” -> 勾/不勾 “使用 RAG” 切换是否检索笔记；未命中上下文自动回退为普通对话。
 - 配额提醒：所选 provider 的 API Key 需有可用额度，否则会返回 `insufficient_quota`。
-
----
-
-### 编辑体验
-
-- [ ] 手机端窄屏适配：默认进入 Markdown 编辑模式，仅在 default 工作区暴露少量功能（换页/编辑）。
-- [ ] 允许页面拖拽跨项目，并支持悬停预览缩略图。
-- [ ] 双击导航栏页码跳转到当前项目第一页，用作目录页。
-- [ ] Markdown 插入对话框新增常用模板（博客 Front Matter、日记、记账、笔记等），Front Matter 采用 YAML 示例。
-- [ ] Markdown ↔ 预览滚动同步：继续维护“主导权 + 阈值 + 定时器防抖”的机制，减少抖动。
 
 ---
 

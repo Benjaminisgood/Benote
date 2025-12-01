@@ -229,8 +229,13 @@ def search_markdown(
     *,
     embedding_model: str | None = None,
     top_k: int = 5,
+    allowed_page_ids: set[str] | None = None,
 ) -> list[dict]:
-    """Search Markdown index with a query string."""
+    """Search Markdown index with a query string.
+
+    When `allowed_page_ids` is provided, results will be limited to those pages. The search
+    will over-fetch to preserve enough matches before filtering.
+    """
 
     if not query or not manifest or not hasattr(index, "search"):
         return []
@@ -244,16 +249,29 @@ def search_markdown(
     )
     if vectors.size == 0:
         return []
-    k = max(1, min(int(top_k or 5), 12))
-    distances, indices = index.search(vectors, k)
-    results: list[dict] = []
+    requested_k = max(1, min(int(top_k or 5), 12))
     chunk_records = manifest.get("chunks") or []
     if len(chunk_records) == 0:
         return []
+    allowed_pages = None
+    if allowed_page_ids:
+        allowed_pages = {str(pid).strip() for pid in allowed_page_ids if str(pid).strip()}
+        if not allowed_pages:
+            allowed_pages = None
+
+    max_results = min(requested_k, len(chunk_records))
+    search_k = max_results
+    if allowed_pages:
+        search_k = min(len(chunk_records), max(max_results * 3, max_results + 2))
+    distances, indices = index.search(vectors, search_k)
+    results: list[dict] = []
     for rank, idx in enumerate(indices[0]):
         if idx < 0 or idx >= len(chunk_records):
             continue
         chunk = chunk_records[int(idx)]
+        page_id = chunk.get("pageId")
+        if allowed_pages and (page_id is None or str(page_id).strip() not in allowed_pages):
+            continue
         results.append(
             {
                 "rank": rank + 1,
@@ -265,4 +283,6 @@ def search_markdown(
                 "text": chunk.get("text") or "",
             }
         )
+        if len(results) >= max_results:
+            break
     return results

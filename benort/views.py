@@ -1048,7 +1048,16 @@ def _build_rag_contexts(
     headers: dict,
     embedding_model: str,
     top_k: int,
+    *,
+    page_id_filter: str | None = None,
+    page_idx_filter: int | None = None,
 ) -> tuple[list[dict], bool]:
+    allowed_pages = None
+    if page_id_filter:
+        normalized = page_id_filter.strip()
+        if normalized:
+            allowed_pages = {normalized}
+
     cache_dir = _workspace_cache_dir(workspace_id) / "rag"
     cache_dir.mkdir(parents=True, exist_ok=True)
     index, manifest, rebuilt = ensure_markdown_index(
@@ -1069,7 +1078,18 @@ def _build_rag_contexts(
         headers,
         embedding_model=embedding_model,
         top_k=top_k,
+        allowed_page_ids=allowed_pages,
     )
+    if page_id_filter or page_idx_filter is not None:
+        filtered: list[dict] = []
+        normalized_id = (page_id_filter or "").strip()
+        for ctx in contexts:
+            if normalized_id and ctx.get("pageId") != normalized_id:
+                continue
+            if page_idx_filter is not None and ctx.get("pageIdx") != page_idx_filter:
+                continue
+            filtered.append(ctx)
+        contexts = filtered
     return contexts, rebuilt
 
 
@@ -1362,13 +1382,31 @@ def assistant_query():
     embedding_model = _resolve_embedding_model(data, embedding_config)
     use_rag_flag = _parse_bool_flag(data.get("useRag"))
     use_rag = True if use_rag_flag is None else bool(use_rag_flag)
+    page_only_flag = _parse_bool_flag(
+        data.get("ragPageOnly") or data.get("currentPageOnly") or data.get("pageOnly") or data.get("ragCurrentPage")
+    )
+    page_only = bool(page_only_flag)
+    page_id_filter = str(data.get("pageId") or data.get("page_id") or data.get("ragPageId") or "").strip()
+    page_idx_raw = data.get("pageIndex") if "pageIndex" in data else data.get("pageIdx")
+    page_idx_filter = None
+    if page_idx_raw is not None:
+        try:
+            page_idx_filter = int(page_idx_raw)
+        except (TypeError, ValueError):
+            page_idx_filter = None
+    page_scope_warning = None
+    if page_only and not page_id_filter and page_idx_filter is None:
+        page_scope_warning = "未提供当前页信息，已回退为全局检索。"
+        page_only = False
 
     contexts: list[dict] = []
     rag_rebuilt = False
     rag_used = False
     rag_notice = None
+    rag_scope = "off"
 
     if use_rag:
+        rag_scope = "page" if page_only else "all"
         try:
             contexts, rag_rebuilt = _build_rag_contexts(
                 message,
@@ -1378,15 +1416,23 @@ def assistant_query():
                 embedding_headers,
                 embedding_model,
                 top_k,
+                page_id_filter=page_id_filter if page_only else None,
+                page_idx_filter=page_idx_filter if page_only else None,
             )
             rag_used = bool(contexts)
             if not contexts:
-                rag_notice = "未命中相关 Markdown 片段，已直接与 LLM 对话。"
+                scope_hint = "（仅当前页）" if page_only else ""
+                rag_notice = f"未命中相关 Markdown 片段{scope_hint}，已直接与 LLM 对话。"
+            if page_scope_warning:
+                rag_notice = f"{page_scope_warning} {rag_notice}" if rag_notice else page_scope_warning
         except RagUnavailableError as exc:
             rag_notice = str(exc)
             use_rag = False
+            rag_scope = "off"
         except Exception as exc:  # pragma: no cover - network/faiss errors
             return api_error(f"RAG 查询失败: {exc}", 500)
+    elif page_scope_warning:
+        rag_notice = page_scope_warning
 
     payload = {
         "model": model_name,
@@ -1423,6 +1469,8 @@ def assistant_query():
             "ragRebuilt": rag_rebuilt,
             "llmModel": model_name,
             "embeddingModel": embedding_model,
+            "ragScope": rag_scope,
+            "ragPageOnly": rag_scope == "page",
         }
     )
 
@@ -2723,6 +2771,7 @@ def _collect_search_matches(pages, query: str, limit: int = 50):
 
             matches.append({
                 "pageIndex": idx,
+                "pageId": page.get("pageId"),
                 "pageLabel": page_label,
                 "field": field,
                 "fieldLabel": label,
@@ -2734,6 +2783,37 @@ def _collect_search_matches(pages, query: str, limit: int = 50):
 
     matches.sort(key=lambda item: (-item["matchCount"], item["pageIndex"]))
     return matches[:limit]
+
+
+@bp.route("/search", methods=["POST"])
+def search_project():
+    """检索当前工作区项目内容，返回命中摘要。"""
+
+    payload = request.get_json(silent=True) or {}
+    query = str(payload.get("query") or payload.get("q") or "").strip()
+    try:
+        limit = int(payload.get("limit") or 50)
+    except (TypeError, ValueError):
+        limit = 50
+    limit = max(1, min(limit, 200))
+
+    workspace_id, _, project, error = _require_workspace_project_response()
+    if error:
+        return error
+
+    pages = project.get("pages", []) if isinstance(project, dict) else []
+    if not isinstance(pages, list):
+        pages = []
+
+    matches = _collect_search_matches(pages, query, limit=limit)
+    return api_success(
+        {
+            "workspace": workspace_id,
+            "query": query,
+            "matches": matches,
+            "pageCount": len(pages),
+        }
+    )
 
 
 @bp.route("/")
