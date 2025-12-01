@@ -158,10 +158,15 @@ gunicorn -w 4 -b 0.0.0.0:5555 benort:app
 
 ---
 
+## 网页外观主题 vs temps Markdown CSS 的区别与协作方式：
+
+页面主题：由 .env（如 BENORT_UI_SKIN/BENORT_COLOR_MODE/...）和“外观配置”弹窗驱动，JS 通过 applyUiConfig 写入 CSS 变量（--surface-*、--accent-* 等）并存入 localStorage，作用于整个编辑器外壳、导航、模态、状态提示等交互界面，运行时可切换。
+temps/markdown_*.yaml：仅用于 Markdown 内容的渲染/导出模版，CSS 限定在 .markdown-note 等容器内，定义正文排版、代码块/表格/Callout 等样式。后端 views._render_markdown_html 会把模板里的 CSS 插入导出 HTML，并根据 UI_THEME.color_mode 添加 theme-light/dark 类供模板内的 body.theme-dark 分支使用，但不会覆盖页面 UI 的主题设置。两者各自独立：一个控制应用外观，一个控制 Markdown 内容渲染。
+
 ## 贡献指南
 
 1. Fork & 新建分支。
 2. 提交前运行最基本的 `python -m compileall benort` 确保语法无误。
 3. 附加说明（如影响现有 `.benort` 文件）请写在 PR 描述。
 
-如果你想讨论新的工作区特性、AI 工作流，直接在 Issue 区留言即可。谢谢！ ***
+如果你想讨论，直接在 Issue 区留言即可。谢谢！ ***
