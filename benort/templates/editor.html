@@ -1132,34 +1132,11 @@
       overflow: auto;
       padding: var(--pane-inner-padding);
     }
-    #markdown-preview-content.markdown-note {
-      padding: 0;
-    }
     .markdown-preview-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
       position: relative;
-    }
-    .markdown-preview-content > * {
-      margin: 0 !important;
-    }
-    .markdown-preview-content p {
-      margin: 0 !important;
-    }
-    .markdown-preview-content.markdown-note > p {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-    }
-    .markdown-preview-content > * {
-      margin-top: 0;
-    }
-    .markdown-preview-content > *:first-child {
-      margin-top: 0;
+      width: 100%;
+      color: var(--shell-text);
+      line-height: 1.6;
     }
     .markdown-preview-content pre {
       background: var(--preview-code-bg);
@@ -3016,7 +2993,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/stex/stex.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/markdown/markdown.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/marked.min.js') }}"></script>
+<script>
+  if (typeof window.marked === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"><\\/script>');
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>
   if (window.hljs) {
