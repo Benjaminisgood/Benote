@@ -3,8 +3,6 @@
 import os
 import textwrap
 
-
-DEFAULT_PROJECT_NAME = "default"
 # 默认模板文件名，可根据需要在 temps 中新增不同方案
 DEFAULT_TEMPLATE_FILENAME = "base_template.yaml"
 DEFAULT_MARKDOWN_TEMPLATE_FILENAME = "markdown_default.yaml"
@@ -303,7 +301,7 @@ FALLBACK_MARKDOWN_TEMPLATE: dict[str, str] = {
 
 # OpenAI ChatCompletion / Embedding / TTS 相关配置（支持分用途 env）
 OPENAI_API_BASE_URL = os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
-OPENAI_CHAT_COMPLETIONS_MODEL = os.environ.get("LLM_CHAT_MODEL", os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o"))
+OPENAI_CHAT_COMPLETIONS_MODEL = os.environ.get("LLM_CHAT_MODEL", os.environ.get("OPENAI_CHAT_MODEL", "gpt-5"))
 OPENAI_CHAT_PATH = os.environ.get("LLM_CHAT_PATH", os.environ.get("OPENAI_CHAT_PATH", "/chat/completions"))
 DEFAULT_EMBEDDING_MODEL = os.environ.get("LLM_EMBEDDING_MODEL", os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large"))
 DEFAULT_EMBEDDING_PATH = os.environ.get("LLM_EMBEDDING_PATH", "/embeddings")
@@ -316,13 +314,64 @@ DEFAULT_TTS_BASE_URL = os.environ.get("LLM_TTS_BASE_URL", OPENAI_API_BASE_URL)
 # ChatAnywhere ChatCompletion 相关配置（保持兼容但可被 LLM_* 覆盖）
 CHATANYWHERE_API_BASE_URL = os.environ.get("CHAT_ANYWHERE_BASE_URL", "https://api.chatanywhere.tech/v1")
 CHATANYWHERE_CHAT_PATH = os.environ.get("CHAT_ANYWHERE_CHAT_PATH", "/chat/completions")
-CHATANYWHERE_DEFAULT_MODEL = os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-4o")
+CHATANYWHERE_DEFAULT_MODEL = os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-5")
 CHATANYWHERE_EMBEDDING_MODEL = os.environ.get("CHAT_ANYWHERE_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL)
 CHATANYWHERE_TTS_MODEL = os.environ.get("CHAT_ANYWHERE_TTS_MODEL", DEFAULT_TTS_MODEL)
 CHATANYWHERE_EMBEDDING_PATH = os.environ.get("CHAT_ANYWHERE_EMBEDDING_PATH", DEFAULT_EMBEDDING_PATH)
 CHATANYWHERE_TTS_PATH = os.environ.get("CHAT_ANYWHERE_TTS_PATH", DEFAULT_TTS_PATH)
 CHATANYWHERE_EMBEDDING_BASE_URL = os.environ.get("CHAT_ANYWHERE_EMBEDDING_BASE_URL", CHATANYWHERE_API_BASE_URL)
 CHATANYWHERE_TTS_BASE_URL = os.environ.get("CHAT_ANYWHERE_TTS_BASE_URL", CHATANYWHERE_API_BASE_URL)
+
+MOCK_LLM_DEFAULT_MODEL = os.environ.get("MOCK_LLM_CHAT_MODEL", "gpt-5")
+
+# 常见可用的 ChatCompletion/Embedding/TTS 模型清单，供前端下拉选择。
+OPENAI_KNOWN_CHAT_MODELS: list[str] = [
+    "gpt-5",
+    "gpt-5-mini",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "o4-mini",
+]
+
+OPENAI_KNOWN_EMBEDDING_MODELS: list[str] = [
+    "text-embedding-3-large",
+    "text-embedding-3-small",
+    "text-embedding-ada-002",
+]
+
+OPENAI_KNOWN_TTS_MODELS: list[str] = [
+    "tts-1",
+    "tts-1-hd",
+]
+
+CHATANYWHERE_KNOWN_CHAT_MODELS: list[str] = list(
+    dict.fromkeys([CHATANYWHERE_DEFAULT_MODEL, *OPENAI_KNOWN_CHAT_MODELS])
+)
+CHATANYWHERE_KNOWN_EMBEDDING_MODELS: list[str] = list(
+    dict.fromkeys([CHATANYWHERE_EMBEDDING_MODEL, *OPENAI_KNOWN_EMBEDDING_MODELS])
+)
+CHATANYWHERE_KNOWN_TTS_MODELS: list[str] = list(
+    dict.fromkeys([CHATANYWHERE_TTS_MODEL, *OPENAI_KNOWN_TTS_MODELS])
+)
+MOCK_LLM_KNOWN_CHAT_MODELS: list[str] = list(dict.fromkeys([MOCK_LLM_DEFAULT_MODEL, *OPENAI_KNOWN_CHAT_MODELS]))
+MOCK_LLM_KNOWN_EMBEDDING_MODELS: list[str] = list(
+    dict.fromkeys(
+        [
+            os.environ.get("MOCK_LLM_EMBEDDING_MODEL", "text-embedding-3-large"),
+            *OPENAI_KNOWN_EMBEDDING_MODELS,
+        ]
+    )
+)
+MOCK_LLM_KNOWN_TTS_MODELS: list[str] = list(
+    dict.fromkeys(
+        [
+            os.environ.get("MOCK_LLM_TTS_MODEL", "tts-1"),
+            *OPENAI_KNOWN_TTS_MODELS,
+        ]
+    )
+)
 
 # 通用 LLM 提供方注册表，便于统一管理聊天模型调用
 LLM_PROVIDERS: dict[str, dict[str, object]] = {
@@ -338,22 +387,9 @@ LLM_PROVIDERS: dict[str, dict[str, object]] = {
         "default_model": OPENAI_CHAT_COMPLETIONS_MODEL,
         "default_embedding_model": DEFAULT_EMBEDDING_MODEL,
         "default_tts_model": DEFAULT_TTS_MODEL,
-        "models": [
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4.1",
-            "gpt-4.1-mini",
-            "o4-mini",
-        ],
-        "embedding_models": [
-            "text-embedding-3-large",
-            "text-embedding-3-small",
-            "text-embedding-ada-002",
-        ],
-        "tts_models": [
-            "tts-1",
-            "tts-1-hd",
-        ],
+        "models": OPENAI_KNOWN_CHAT_MODELS,
+        "embedding_models": OPENAI_KNOWN_EMBEDDING_MODELS,
+        "tts_models": OPENAI_KNOWN_TTS_MODELS,
         "api_key_env": "OPENAI_API_KEY",
         "api_key_header": "Authorization",
         "api_key_prefix": "Bearer ",
@@ -372,16 +408,9 @@ LLM_PROVIDERS: dict[str, dict[str, object]] = {
         "default_model": CHATANYWHERE_DEFAULT_MODEL,
         "default_embedding_model": CHATANYWHERE_EMBEDDING_MODEL,
         "default_tts_model": CHATANYWHERE_TTS_MODEL,
-        "models": [
-            CHATANYWHERE_DEFAULT_MODEL,
-        ],
-        "embedding_models": [
-            CHATANYWHERE_EMBEDDING_MODEL,
-            "text-embedding-3-small",
-        ],
-        "tts_models": [
-            CHATANYWHERE_TTS_MODEL,
-        ],
+        "models": CHATANYWHERE_KNOWN_CHAT_MODELS,
+        "embedding_models": CHATANYWHERE_KNOWN_EMBEDDING_MODELS,
+        "tts_models": CHATANYWHERE_KNOWN_TTS_MODELS,
         "api_key_env": "CHAT_ANYWHERE_API_KEY",
         "api_key_header": "Authorization",
         "api_key_prefix": "Bearer ",
@@ -398,20 +427,12 @@ LLM_PROVIDERS: dict[str, dict[str, object]] = {
         "tts_path": os.environ.get("MOCK_LLM_TTS_PATH", "/audio/speech"),
         "embedding_base_url": os.environ.get("MOCK_LLM_EMBEDDING_BASE_URL", os.environ.get("MOCK_LLM_BASE_URL", "http://localhost:8000/v1")),
         "tts_base_url": os.environ.get("MOCK_LLM_TTS_BASE_URL", os.environ.get("MOCK_LLM_BASE_URL", "http://localhost:8000/v1")),
-        "default_model": os.environ.get("MOCK_LLM_CHAT_MODEL", "gpt-4o"),
+        "default_model": MOCK_LLM_DEFAULT_MODEL,
         "default_embedding_model": os.environ.get("MOCK_LLM_EMBEDDING_MODEL", "text-embedding-3-large"),
         "default_tts_model": os.environ.get("MOCK_LLM_TTS_MODEL", "tts-1"),
-        "models": [
-            os.environ.get("MOCK_LLM_CHAT_MODEL", "gpt-4o"),
-            "gpt-4o-mini",
-        ],
-        "embedding_models": [
-            os.environ.get("MOCK_LLM_EMBEDDING_MODEL", "text-embedding-3-large"),
-            "text-embedding-3-small",
-        ],
-        "tts_models": [
-            os.environ.get("MOCK_LLM_TTS_MODEL", "tts-1"),
-        ],
+        "models": MOCK_LLM_KNOWN_CHAT_MODELS,
+        "embedding_models": MOCK_LLM_KNOWN_EMBEDDING_MODELS,
+        "tts_models": MOCK_LLM_KNOWN_TTS_MODELS,
         "api_key_env": os.environ.get("MOCK_LLM_API_KEY_ENV", "MOCK_LLM_API_KEY"),
         "api_key_header": "Authorization",
         "api_key_prefix": "Bearer ",
@@ -1185,7 +1206,6 @@ def init_app_config(app) -> None:
 
 
 __all__ = [
-    "DEFAULT_PROJECT_NAME",
     "DEFAULT_TEMPLATE_FILENAME",
     "DEFAULT_MARKDOWN_TEMPLATE_FILENAME",
     "FALLBACK_TEMPLATE",

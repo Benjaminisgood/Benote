@@ -6,7 +6,13 @@ import copy
 import os
 from typing import Any, Dict, List, Optional
 
-from .config import DEFAULT_LLM_PROVIDER, LLM_PROVIDERS
+from .config import (
+    DEFAULT_LLM_PROVIDER,
+    LLM_PROVIDERS,
+    OPENAI_KNOWN_CHAT_MODELS,
+    OPENAI_KNOWN_EMBEDDING_MODELS,
+    OPENAI_KNOWN_TTS_MODELS,
+)
 
 
 def _normalize_provider_id(provider_id: Optional[str]) -> str:
@@ -180,17 +186,27 @@ def list_llm_providers() -> List[Dict[str, Any]]:
         }
         providers.append(entry)
     if not providers:
+        fallback_chat = OPENAI_KNOWN_CHAT_MODELS[0] if OPENAI_KNOWN_CHAT_MODELS else "gpt-5"
+        fallback_embedding = OPENAI_KNOWN_EMBEDDING_MODELS[0] if OPENAI_KNOWN_EMBEDDING_MODELS else "text-embedding-3-large"
+        fallback_tts = OPENAI_KNOWN_TTS_MODELS[0] if OPENAI_KNOWN_TTS_MODELS else "tts-1"
+        fallback_chat_models = list(OPENAI_KNOWN_CHAT_MODELS) or [fallback_chat]
+        fallback_embedding_models = list(OPENAI_KNOWN_EMBEDDING_MODELS) or [fallback_embedding]
+        fallback_tts_models = list(OPENAI_KNOWN_TTS_MODELS) or [fallback_tts]
         providers.extend(
             [
                 {
                     "id": "openai",
                     "label": "OpenAI",
-                    "defaultModel": "gpt-4o",
-                    "defaultEmbeddingModel": "text-embedding-3-large",
-                    "defaultTtsModel": "tts-1",
-                    "models": ["gpt-4o", "gpt-4o-mini"],
-                    "embeddingModels": ["text-embedding-3-large", "text-embedding-3-small"],
-                    "ttsModels": ["tts-1", "tts-1-hd"],
+                    "defaultModel": os.environ.get(
+                        "LLM_CHAT_MODEL", os.environ.get("OPENAI_CHAT_MODEL", fallback_chat)
+                    ),
+                    "defaultEmbeddingModel": os.environ.get(
+                        "LLM_EMBEDDING_MODEL", os.environ.get("OPENAI_EMBEDDING_MODEL", fallback_embedding)
+                    ),
+                    "defaultTtsModel": os.environ.get("LLM_TTS_MODEL", os.environ.get("OPENAI_TTS_MODEL", fallback_tts)),
+                    "models": fallback_chat_models,
+                    "embeddingModels": fallback_embedding_models,
+                    "ttsModels": fallback_tts_models,
                     "baseUrl": os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1"),
                     "chatPath": os.environ.get("OPENAI_CHAT_PATH", "/chat/completions"),
                     "embeddingPath": os.environ.get("LLM_EMBEDDING_PATH", "/embeddings"),
@@ -201,12 +217,12 @@ def list_llm_providers() -> List[Dict[str, Any]]:
                 {
                     "id": "chatanywhere",
                     "label": "ChatAnywhere",
-                    "defaultModel": os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-4o"),
-                    "defaultEmbeddingModel": os.environ.get("CHAT_ANYWHERE_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL),
-                    "defaultTtsModel": os.environ.get("CHAT_ANYWHERE_TTS_MODEL", DEFAULT_TTS_MODEL),
-                    "models": [os.environ.get("CHAT_ANYWHERE_MODEL", "gpt-4o")],
-                    "embeddingModels": [os.environ.get("CHAT_ANYWHERE_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL)],
-                    "ttsModels": [os.environ.get("CHAT_ANYWHERE_TTS_MODEL", DEFAULT_TTS_MODEL)],
+                    "defaultModel": os.environ.get("CHAT_ANYWHERE_MODEL", fallback_chat),
+                    "defaultEmbeddingModel": os.environ.get("CHAT_ANYWHERE_EMBEDDING_MODEL", fallback_embedding),
+                    "defaultTtsModel": os.environ.get("CHAT_ANYWHERE_TTS_MODEL", fallback_tts),
+                    "models": fallback_chat_models,
+                    "embeddingModels": fallback_embedding_models,
+                    "ttsModels": fallback_tts_models,
                     "baseUrl": os.environ.get("CHAT_ANYWHERE_BASE_URL", "https://api.chatanywhere.tech/v1"),
                     "chatPath": os.environ.get("CHAT_ANYWHERE_CHAT_PATH", "/chat/completions"),
                     "embeddingPath": os.environ.get("CHAT_ANYWHERE_EMBEDDING_PATH", "/embeddings"),
@@ -217,12 +233,12 @@ def list_llm_providers() -> List[Dict[str, Any]]:
                 {
                     "id": "mock-local",
                     "label": "Mock Local",
-                    "defaultModel": os.environ.get("MOCK_LLM_CHAT_MODEL", "gpt-4o"),
-                    "defaultEmbeddingModel": os.environ.get("MOCK_LLM_EMBEDDING_MODEL", "text-embedding-3-large"),
-                    "defaultTtsModel": os.environ.get("MOCK_LLM_TTS_MODEL", "tts-1"),
-                    "models": ["gpt-4o", "gpt-4o-mini"],
-                    "embeddingModels": ["text-embedding-3-large", "text-embedding-3-small"],
-                    "ttsModels": ["tts-1"],
+                    "defaultModel": os.environ.get("MOCK_LLM_CHAT_MODEL", fallback_chat),
+                    "defaultEmbeddingModel": os.environ.get("MOCK_LLM_EMBEDDING_MODEL", fallback_embedding),
+                    "defaultTtsModel": os.environ.get("MOCK_LLM_TTS_MODEL", fallback_tts),
+                    "models": fallback_chat_models,
+                    "embeddingModels": fallback_embedding_models,
+                    "ttsModels": fallback_tts_models,
                     "baseUrl": os.environ.get("MOCK_LLM_BASE_URL", "http://localhost:8000/v1"),
                     "chatPath": os.environ.get("MOCK_LLM_CHAT_PATH", "/chat/completions"),
                     "embeddingPath": os.environ.get("MOCK_LLM_EMBEDDING_PATH", "/embeddings"),
