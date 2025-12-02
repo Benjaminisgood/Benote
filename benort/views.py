@@ -1700,10 +1700,39 @@ def _build_markdown_export_html(
   <div class="{wrapper_class_attr}">
 {body_html}
   </div>
-</body>
+  </body>
 </html>
 """
     return document
+
+
+def _resolve_markdown_template(project: Optional[dict]) -> dict:
+    """Return the effective Markdown export template for a project."""
+
+    default_template = get_default_markdown_template()
+    template: dict[str, str] = {
+        "css": default_template.get("css", ""),
+        "wrapperClass": default_template.get("wrapperClass", ""),
+    }
+    default_head = default_template.get("customHead")
+    if isinstance(default_head, str) and default_head.strip():
+        template["customHead"] = default_head
+
+    raw_template = project.get("markdownTemplate") if isinstance(project, dict) else None
+    if isinstance(raw_template, dict):
+        css_value = raw_template.get("css")
+        if isinstance(css_value, str):
+            template["css"] = css_value
+        wrapper_value = raw_template.get("wrapperClass")
+        if isinstance(wrapper_value, str):
+            template["wrapperClass"] = wrapper_value
+        head_value = raw_template.get("customHead")
+        if isinstance(head_value, str) and head_value.strip():
+            template["customHead"] = head_value
+        elif not head_value:
+            template.pop("customHead", None)
+
+    return template
 
 
 def _normalize_link_target(value: object) -> str:
@@ -2635,6 +2664,38 @@ def _extract_page_label(idx: int, page: dict) -> str:
     return f"第 {idx + 1} 页"
 
 
+def _collect_project_notes_markdown(project: Optional[dict]) -> tuple[str, list[int]]:
+    """Merge all page notes into one Markdown document."""
+
+    pages = project.get("pages", []) if isinstance(project, dict) else []
+    if not isinstance(pages, list):
+        pages = []
+
+    sections: list[str] = []
+    included_pages: list[int] = []
+
+    for idx, page in enumerate(pages):
+        if isinstance(page, dict):
+            notes_raw = page.get("notes", "") or ""
+        else:  # pragma: no cover - defensive fallback for unexpected payloads
+            notes_raw = str(page or "")
+
+        normalized = str(notes_raw or "")
+        if not normalized.strip():
+            continue
+
+        title = _extract_page_label(idx, page)
+        clean_title = re.sub(r"[\r\n]+", " ", title).strip()
+        default_title = f"第 {idx + 1} 页"
+        heading = default_title if clean_title == default_title or not clean_title else f"{default_title}：{clean_title}"
+
+        sections.append(f"## {heading}\n\n{normalized.strip()}")
+        included_pages.append(idx + 1)
+
+    merged = "\n\n---\n\n".join(sections)
+    return merged, included_pages
+
+
 def _request_tts_audio_bytes(
     normalized: str,
     llm_config: dict,
@@ -3154,28 +3215,7 @@ def export_page_markdown_html():
     if not notes.strip():
         return jsonify({"success": False, "error": "当前页没有笔记可导出"}), 400
 
-    default_template = get_default_markdown_template()
-    template: dict = {
-        "css": default_template.get("css", ""),
-        "wrapperClass": default_template.get("wrapperClass", ""),
-    }
-    if default_template.get("customHead"):
-        template["customHead"] = default_template["customHead"]
-
-    raw_template = project.get("markdownTemplate") if isinstance(project, dict) else None
-    if isinstance(raw_template, dict):
-        css_value = raw_template.get("css")
-        if isinstance(css_value, str):
-            template["css"] = css_value
-        wrapper_value = raw_template.get("wrapperClass")
-        if isinstance(wrapper_value, str):
-            template["wrapperClass"] = wrapper_value
-        head_value = raw_template.get("customHead")
-        if isinstance(head_value, str) and head_value.strip():
-            template["customHead"] = head_value
-        elif "customHead" in template and not template["customHead"]:
-            template.pop("customHead")
-
+    template = _resolve_markdown_template(project)
     with _workspace_runtime_dirs(package) as paths:
         project_name = _workspace_project_label(package, project)
         html_output = _build_markdown_export_html(
@@ -3190,6 +3230,64 @@ def export_page_markdown_html():
     download_name = f"page_{page_idx + 1}_notes.html"
     return send_file(
         buffer,
+        mimetype="text/html",
+        as_attachment=True,
+        download_name=download_name,
+    )
+
+
+@bp.route("/export_notes", methods=["GET"])
+def export_notes():
+    """导出全部页面的 Markdown 笔记。"""
+
+    _, package, project, error = _require_workspace_project_response()
+    if error:
+        return error
+
+    merged_markdown, _included_pages = _collect_project_notes_markdown(project)
+    if not merged_markdown.strip():
+        return jsonify({"success": False, "error": "项目中没有可导出的笔记"}), 400
+
+    project_label = _workspace_project_label(package, project)
+    safe_label = secure_filename(project_label) or project_label or "notes"
+    download_name = f"{safe_label}_notes.md"
+
+    buffer = io.BytesIO(merged_markdown.encode("utf-8"))
+    return send_file(
+        buffer,
+        mimetype="text/markdown",
+        as_attachment=True,
+        download_name=download_name,
+    )
+
+
+@bp.route("/export_notes_html", methods=["GET"])
+def export_notes_html():
+    """导出全部页面的 Markdown 渲染 HTML（合并）。"""
+
+    _, package, project, error = _require_workspace_project_response()
+    if error:
+        return error
+
+    merged_markdown, _included_pages = _collect_project_notes_markdown(project)
+    if not merged_markdown.strip():
+        return jsonify({"success": False, "error": "项目中没有可导出的笔记"}), 400
+
+    template = _resolve_markdown_template(project)
+    with _workspace_runtime_dirs(package) as paths:
+        project_name = _workspace_project_label(package, project)
+        html_output = _build_markdown_export_html(
+            merged_markdown,
+            template,
+            project_name,
+            paths["attachments"],
+            paths["resources"],
+        )
+
+    safe_label = secure_filename(project_name) or project_name or "notes"
+    download_name = f"{safe_label}_notes.html"
+    return send_file(
+        io.BytesIO(html_output.encode("utf-8")),
         mimetype="text/html",
         as_attachment=True,
         download_name=download_name,

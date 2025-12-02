@@ -18,7 +18,10 @@
     window.BENORT_PORTABLE_ERROR = {{ (portable_workspace_error or "")|tojson }};
   </script>
   <style>
+    /* CSS 基础讲解：每个规则都像 “选择器 { 属性: 值; }”，用分号隔开。变量写作 --name 在 :root 定义，引用时用 var(--name, 备选值) */
+    /* 下面的内容主要通过自定义属性（变量）+ 选择器组合，统一控制颜色、间距与布局，便于前端小白逐步修改 */
     /* === UI tokens & skins === */
+    /* :root 代表文档根，定义的 --变量 可以在任何地方用 var(--变量) 调用，方便集中调整主题 */
     :root {
       --editor-preview-weight: 7;
       --script-pane-weight: 3;
@@ -55,7 +58,7 @@
       --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 82%, var(--accent-strong) 18%);
       --btn-chrome-shadow: none; /* 去除阴影，保持平 */
     }
-    /* Skin + mode tokens (each主题自带明/暗版本) */
+    /* Skin + mode tokens 用带 data-ui-skin 和 data-bs-theme 的属性选择器，按皮肤/明暗覆盖上面的变量值 */
     body[data-ui-skin="default"][data-bs-theme="light"],
     body:not([data-ui-skin])[data-bs-theme="light"] {
       --shell-bg: #f5f7fb;
@@ -312,11 +315,13 @@
     }
     
     
+    /* html, body 组合选择器让页面填满屏幕，并关闭默认 margin 以便自己控制 layout */
     html, body {
       margin: 0;
       height: 100vh;
       overflow: auto;
     }
+    /* body 设置背景/文字颜色和 flex 布局，配合 CSS 变量保证主题一致。display:flex 用于垂直堆叠主内容。 */
     body {
       background: var(--shell-bg);
       color: var(--shell-text);
@@ -333,6 +338,7 @@
     body.modal-open #app-shell {
       overflow: hidden;
     }
+    /* .modal.show/.modal-dialog 等控制弹窗位置、滚动区，Bootstrap 的 class 通过这里细化样式 */
     .modal.show {
       display: flex;
       align-items: center;
@@ -342,6 +348,7 @@
       margin: 1.25rem auto;
       max-height: calc(100vh - 2rem);
     }
+    /* 这里再强调 modal-content 用 surface 变量统一背景和边框，防止不一致 */
     .modal-content {
       display: flex;
       flex-direction: column;
@@ -349,12 +356,14 @@
       overflow: hidden;
       width: 100%;
     }
+    /* modal-body 控制弹窗内部的背景色和文字，确保蹦出层统一 */
     .modal-body {
       min-height: 0;
       flex: 1 1 auto;
       overflow-x: hidden;
       overflow-y: auto;
     }
+    /* #app-shell 是整个编辑器的主容器，这里用 flex 让中间内容扩大，transition 负责淡入效果 */
     #app-shell {
       flex: 1 1 auto;
       display: flex;
@@ -363,6 +372,7 @@
       height: 100%;
       transition: filter 0.3s ease, opacity 0.3s ease;
     }
+    /* #main-layout 继续沿用 flex，gap/padding/overflow 控制主界面左右布局和滚动区域 */
     #main-layout {
       flex: 1 1 auto;
       display: flex;
@@ -374,6 +384,7 @@
       width: 100%;
       height: 100%;
     }
+    /* #editor-preview-wrapper 用 flex 排列编辑和预览面板，并加 padding/box-shadow 做卡片效果 */
     #editor-preview-wrapper {
       display: flex;
       flex-direction: row;
@@ -402,6 +413,7 @@
       flex-direction: column;
       min-width: 0;
     }
+    /* markdown-sync-toggle-wrapper 通过绝对定位 + translate 让按钮居中响应用户操作 */
     .markdown-sync-toggle-wrapper {
       position: absolute;
       top: 50%;
@@ -415,6 +427,7 @@
       width: 0;
       height: 0;
     }
+    /* markdown-sync-toggle 控制按钮外观/悬停, color 表示文字, padding 让触控区域更大 */
     .markdown-sync-toggle {
       border: none;
       background: transparent;
@@ -456,6 +469,7 @@
       color: #38bdf8;
       text-shadow: 0 0 8px rgba(56, 189, 248, 0.48);
     }
+    /* .nav-flex-wrap 把导航菜单做成 flex 行列，并用 gap 控制按钮间距 */
     .nav-flex-wrap {
       display: flex;
       flex-wrap: wrap;
@@ -475,6 +489,7 @@
     .nav-flex-wrap .btn {
       white-space: nowrap;
     }
+    /* .navbar 使用 position:sticky 固定在顶部，backdrop-filter/box-shadow 增加高亮通透感 */
     .navbar {
       margin-bottom: -1px; /* eliminate visible gap with content */
       flex-shrink: 0;
@@ -506,6 +521,7 @@
       background: var(--surface-1);
       box-shadow: var(--surface-shadow);
     }
+    /* .actionable-card 处理可点击卡片的边框/圆角/hover 反馈 */
     .actionable-card {
       position: relative;
       border-radius: 0.75rem;
@@ -525,6 +541,7 @@
       background-color: color-mix(in srgb, var(--accent) 22%, transparent);
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-strong) 38%, transparent);
     }
+    /* .action-bubble 控制提示气泡的弹出动作，opacity/transform 搭配 transition 实现淡入动画 */
     .action-bubble {
       position: absolute;
       z-index: 2050;
@@ -577,6 +594,7 @@
         text-align: center;
       }
     }
+    /* .learning-prompt-card 是提示卡片，border/radius/background/transition 让它变得软萌 */
     .learning-prompt-card {
       position: relative;
       padding: 0.95rem 1.1rem;
@@ -622,6 +640,7 @@
     body.theme-dark .learning-prompt-card__meta {
       color: #cbd5f5;
     }
+    /* .ai-learn-temp-card 组合渐变背景与阴影，常用于展示学习提示 */
     .ai-learn-temp-card {
       border: 1px solid rgba(148, 163, 184, 0.4);
       border-radius: 1rem;
@@ -643,6 +662,7 @@
     body.theme-dark .ai-learn-temp-card small {
       color: #cbd5e1;
     }
+    /* #ai-learn-temp-prompt 控制文本区的最小高度与字体，使用 monospace 字体方便复制粘贴 */
     #ai-learn-temp-prompt {
       min-height: 120px;
       font-family: var(--bs-font-monospace);
@@ -657,6 +677,7 @@
     .ai-learn-temp-actions .btn {
       min-width: 112px;
     }
+    /* .ai-assistant-answer 让 AI 回答区域有边框、圆角、monospace 字体，有利于看代码/公式 */
     .ai-assistant-answer {
       min-height: 180px;
       border-radius: 0.75rem;
@@ -684,6 +705,7 @@
     body.theme-dark .ai-assistant-contexts-collapsed {
       border-color: rgba(148, 163, 184, 0.3);
     }
+    /* .ai-assistant-context 设定上下文区域的内边距/边框/背景，保证可读性 */
     .ai-assistant-context {
       border: 1px solid rgba(148, 163, 184, 0.35);
       border-radius: 0.75rem;
@@ -707,8 +729,10 @@
     body.theme-dark .ai-assistant-context__meta {
       color: #cbd5e1;
     }
+    /* 下面这个组合选择器作用于编辑器/讲稿/预览容器，统一设置边框、背景和滚动行为 */
     #editor-container,
     #pdf-container,
+    /* #markdown-preview 继续强制竖直排列内部内容，方便预览里的多个区域 */
     #markdown-preview {
       flex: 1 1 auto;
       min-height: 0;
@@ -726,8 +750,10 @@
       display: flex;
       flex-direction: column;
     }
+    /* .CodeMirror 系列是 CodeMirror 编辑器本身的类，调整背景/文字/边线让其融入主题 */
     .CodeMirror,
     .CodeMirror-scroll,
+    /* gutter 右侧 line-number 边框 */
     .CodeMirror-gutters {
       background: var(--preview-bg) !important;
       color: var(--shell-text);
@@ -735,12 +761,14 @@
     .CodeMirror-gutters {
       border-right: 1px solid var(--preview-border);
     }
+    /* .modal-header/footer 控制弹窗头部/脚部的背景和边框 */
     .modal-header,
     .modal-footer {
       border-color: var(--preview-border);
       background: var(--surface-1);
       color: var(--shell-text);
     }
+    /* 这个组合选择器统一控制各种 modal 的背景/颜色/边框，避免不同弹窗样式漂移 */
     .workspace-modal .modal-content,
     #remoteWorkspaceModal .modal-content,
     #resourcesModal .modal-content,
@@ -754,21 +782,25 @@
     #bibModal .modal-content,
     #attachmentsModal .modal-content,
     #markdownImageModal .modal-content,
+    /* 同时设定表格弹窗的圆角/边框/背景 */
     #markdownTableModal .modal-content {
       background: var(--surface-1);
       color: var(--shell-text);
       border: 1px solid var(--surface-border);
     }
+    /* .workspace-form 控制工作区相关表单的统一背景与边框 */
     .workspace-form {
       background: var(--preview-bg);
       border-color: var(--preview-border);
     }
+    /* #tex-form / #pages-list 通过 flex 让内部内容响应式填满高度 */
     #tex-form {
       flex: 1 1 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
     }
+    /* #pages-list 是包含多个页面的容器，用 flex column 垂直堆叠 */
     #pages-list {
       flex: 1 1 auto;
       min-height: 0;
@@ -782,6 +814,7 @@
       flex-direction: column;
       margin: 0 !important;
     }
+    /* .page-script-container 用于讲稿区域，border/shadow/background 加强层级感 */
     .page-script-container {
       margin: 0;
       display: flex;
@@ -801,6 +834,7 @@
       box-shadow: var(--surface-shadow);
       border-color: var(--surface-border);
     }
+    /* #page-script 是讲稿 textarea，为了能滚动保留高度设置 overflow */
     #page-script {
       flex: 1 1 auto;
       min-height: 0;
@@ -808,16 +842,19 @@
       overflow: auto;
       resize: none;
     }
+    /* .markdown-sync-glow 通过 box-shadow 实现同步提醒的发光效果 */
     .markdown-sync-glow {
       border-color: color-mix(in srgb, var(--accent, #2563eb) 70%, transparent) !important;
       box-shadow:
         0 0 16px color-mix(in srgb, var(--accent, #2563eb) 26%, transparent),
         0 0 6px color-mix(in srgb, var(--accent-strong, var(--accent, #2563eb)) 36%, transparent);
     }
+    /* body.theme-dark 结合 class 控制深色模式时的背景/颜色切换 */
     body.theme-dark {
       background: var(--shell-bg);
       color: var(--shell-text);
     }
+    /* 深色模式下 nav 也需要单独调整，避免背景变黑看不清 */
     body.theme-dark .navbar {
       background: var(--nav-surface);
       border-bottom: 1px solid var(--nav-border, rgba(96, 165, 250, 0.25));
@@ -832,19 +869,22 @@
       background: var(--surface-1);
       color: var(--shell-text);
     }
+    /* modal-backdrop 是背景遮罩，透明度让弹窗浮在上层 */
     .modal-backdrop.show {
       background: rgba(15, 23, 42, 0.35);
     }
-body.theme-dark .form-control,
-body.theme-dark .form-select,
-body.theme-dark .input-group-text,
-body[data-bs-theme="light"] .form-control,
-body[data-bs-theme="light"] .form-select,
-body[data-bs-theme="light"] .input-group-text {
+    /* 表单控件（输入框/下拉）使用变量固定背景、边框和文字，让它们跟随皮肤/明暗 */
+    body.theme-dark .form-control,
+    body.theme-dark .form-select,
+    body.theme-dark .input-group-text,
+    body[data-bs-theme="light"] .form-control,
+    body[data-bs-theme="light"] .form-select,
+    body[data-bs-theme="light"] .input-group-text {
       background-color: var(--surface-2); /* 输入类控件底色（随明暗/皮肤变化） */
       border-color: var(--surface-border); /* 输入类边框色 */
       color: var(--shell-text); /* 输入类文字色 */
-}
+    }
+    /* ::file-selector-button 是 input[type=file] 的按钮，用来统一按钮样式 */
     .form-control::file-selector-button {
       background: var(--btn-chrome-bg); /* 文件按钮与输入框同底色 */
       color: var(--btn-chrome-text);
@@ -853,40 +893,48 @@ body[data-bs-theme="light"] .input-group-text {
       border-radius: calc(var(--bs-border-radius, 0.5rem) - 1px) 0 0 calc(var(--bs-border-radius, 0.5rem) - 1px);
       transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
     }
+    /* :hover/:focus-visible 让文件按钮在交互时也能看出变化 */
     .form-control::file-selector-button:hover,
     .form-control::file-selector-button:focus-visible {
       background: var(--btn-chrome-hover-bg);
       color: var(--btn-chrome-text);
       border-color: var(--btn-chrome-hover-border, color-mix(in srgb, var(--surface-border) 92%, var(--accent-strong) 8%));
     }
+    /* .list-group-item 是 Bootstrap 列表项，设置背景/文字/边框跟整体一致 */
     .list-group-item {
       background-color: var(--surface-2);
       color: var(--shell-text);
       border-color: var(--surface-border);
     }
+    /* hover/focus 状态通过 color-mix 调整背景，使列表项在互动时有高亮 */
     .list-group-item-action:hover,
     .list-group-item-action:focus {
       background-color: color-mix(in srgb, var(--surface-2) 80%, var(--accent) 20%);
     }
+    /* focus 状态加边框/阴影，告诉用户当前输入的控件 */
     .form-control:focus,
     .form-select:focus,
     .form-check-input:focus {
       border-color: color-mix(in srgb, var(--accent-strong, #2563eb) 70%, transparent);
       box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent, #2563eb) 30%, transparent);
     }
+    /* 选中状态的复选框/单选按钮直接用 accent 颜色填充 */
     .form-check-input:checked {
       background-color: var(--accent, #2563eb);
       border-color: var(--accent-strong, #1d4ed8);
     }
+    /* 手风琴组件（accordion）展开时改变背景/颜色，保持边框 */
     .accordion-button:not(.collapsed) {
       color: var(--shell-text);
       background: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
       box-shadow: inset 0 -1px 0 var(--surface-border);
     }
+    /* focus 时加 glow，帮助键盘用户定位 */
     .accordion-button:focus {
       border-color: color-mix(in srgb, var(--accent-strong) 60%, var(--surface-border));
       box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--accent) 28%, transparent);
     }
+    /* .surface-card 是通用卡片，border/shadow/rounded 提升层次感 */
     .surface-card {
       background: var(--surface-1);
       border: 1px solid var(--surface-border);
@@ -898,6 +946,7 @@ body[data-bs-theme="light"] .input-group-text {
       background: var(--surface-1);
       border-color: var(--surface-border);
     }
+    /* .llm-provider-label 是小字标签，通过 letter-spacing/text-transform 提示是辅助信息 */
     .llm-provider-label {
       font-size: 0.78rem;
       letter-spacing: 0.05em;
@@ -907,6 +956,7 @@ body[data-bs-theme="light"] .input-group-text {
     body.theme-dark .llm-provider-label {
       color: var(--accent);
     }
+    /* provider chip 使用 inline-flex 保持内容居中，border-radius=999px 变成胶囊 */
     .llm-provider-chip {
       display: inline-flex;
       align-items: center;
@@ -922,6 +972,7 @@ body[data-bs-theme="light"] .input-group-text {
       border-color: color-mix(in srgb, var(--accent-strong) 32%, var(--surface-border));
       color: var(--shell-text);
     }
+    /* 这里定义状态 Badge 的字体粗细与字间距 */
     .llm-modal-provider-status.badge {
       font-weight: 600;
       letter-spacing: 0.04em;
@@ -929,10 +980,12 @@ body[data-bs-theme="light"] .input-group-text {
     body.theme-dark .llm-modal-provider-status.badge.bg-warning {
       color: #111827 !important;
     }
+    /* .oss-diff-scroll 满足 diff 区域高滚动条需求 */
     .oss-diff-scroll {
       max-height: 220px;
       overflow: auto;
     }
+    /* resource list 的项用 flex horizontal layout，wrap 以防按钮溢出 */
     .resource-list .resource-item {
       display: flex;
       flex-wrap: wrap;
@@ -940,16 +993,19 @@ body[data-bs-theme="light"] .input-group-text {
       justify-content: space-between;
       gap: 0.75rem;
     }
+    /* resource-name 设置文本换行与最小宽度，避免长名称溢出 */
     .resource-list .resource-name {
       flex: 1 1 240px;
       min-width: 0;
       word-break: break-word;
       overflow-wrap: anywhere;
     }
+    /* 继承上面那条，链接不要额外截断 */
     .resource-list .resource-name a {
       word-break: inherit;
       overflow-wrap: inherit;
     }
+    /* actions 区域靠右排列，margin-left:auto 保证按钮贴边 */
     .resource-list .resource-actions {
       flex: 0 0 auto;
       margin-left: auto;
@@ -957,13 +1013,16 @@ body[data-bs-theme="light"] .input-group-text {
       flex-wrap: wrap;
       gap: 0.5rem;
     }
+    /* 这里清除 Bootstrap 给按钮的 margin-right，保持 layout 紧凑 */
     .resource-list .resource-actions .btn {
       margin-right: 0;
     }
+    /* 预览新名称也允许换行，避免长内容撑坏布局 */
     #resource-rename-preview {
       word-break: break-word;
       overflow-wrap: anywhere;
     }
+    /* js-nav-btn 控制导航栏按钮的 padding/line-height，保持按钮一致大小 */
     .js-nav-btn {
       min-height: 34px;
       padding: var(--nav-btn-padding-y) var(--nav-btn-padding-x);
@@ -976,28 +1035,32 @@ body[data-bs-theme="light"] .input-group-text {
       line-height: 1.25;
       transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
     }
+    /* 移动端的翻页按钮组用 gap 控制间距 */
     .mobile-page-control-group {
       gap: 0.5rem;
     }
     .mobile-page-control-group .mobile-page-btn {
       margin-right: 0;
     }
+    /* dropdown-menu 用 surface 变量设置背景/边框，box-shadow 提升层次 */
     .dropdown-menu {
       background: var(--surface-1);
       border: 1px solid var(--surface-border);
       box-shadow: 0 12px 26px rgba(15, 23, 42, 0.2);
     }
+    /* 让下拉项继承主题文字颜色 */
     .dropdown-item,
     .dropdown-item-text {
       color: var(--shell-text);
     }
+    /* hover/focus/active 状态改变背景，便于用户知道当前选项 */
     .dropdown-item:hover,
     .dropdown-item:focus,
     .dropdown-item.active {
       background: color-mix(in srgb, var(--accent) 18%, transparent);
       color: var(--shell-text);
     }
-    /* 统一按钮与输入框：同底色/边框/文字，禁用渐变与独立高亮 */
+    /* 统一按钮与输入框：重写 Bootstrap 变量，让所有按钮用 surface 颜色，不要额外渐变 */
     .btn {
       --bs-btn-color: var(--btn-chrome-text);
       --bs-btn-bg: var(--btn-chrome-bg);
@@ -1018,8 +1081,10 @@ body[data-bs-theme="light"] .input-group-text {
       transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
       border-radius: var(--bs-border-radius, 0.5rem); /* 圆角与输入框一致 */
     }
+    /* hover/focus 时继续使用变量并保持高亮边框，避免 Bootstrap 默认阴影 */
     .btn:hover,
     .btn:focus,
+    /* focus-visible 是键盘导航显式轮廓，这里用 glow 替代 outline */
     .btn:focus-visible {
       background: var(--btn-chrome-hover-bg) !important;
       background-color: var(--btn-chrome-hover-bg) !important;
@@ -1030,6 +1095,7 @@ body[data-bs-theme="light"] .input-group-text {
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #2563eb) 26%, transparent) !important;
       outline: none;
     }
+    /* 需要被点击或激活的按钮也用 active 背景，保持视觉一致 */
     .btn:active,
     .btn.active,
     .btn.show,
@@ -1040,12 +1106,13 @@ body[data-bs-theme="light"] .input-group-text {
       border-color: var(--btn-chrome-active-border, var(--btn-chrome-border)) !important;
       color: var(--btn-chrome-text) !important;
     }
+    /* 禁用状态降低透明度和阴影 */
     .btn:disabled,
     .btn.disabled {
       opacity: 0.65;
       box-shadow: none;
     }
-    /* 所有语义/描边/导航按钮强制共用上述底色与边框 */
+    /* 所有语义按钮（primary/outline 等）都继承上面的统一 chrome 样式 */
     .btn-primary,
     .btn-secondary,
     .btn-success,
@@ -1069,33 +1136,42 @@ body[data-bs-theme="light"] .input-group-text {
       border-color: var(--btn-chrome-border) !important;
       box-shadow: none !important;
     }
+    /* 深色模式的 CodeMirror 再单独调背景与光标 */ 
     body.theme-dark .CodeMirror {
       background: #0b1120;
       color: #e2e8f0;
     }
+    /* gutter 是行号左侧那块，去掉明亮背景更容易读 */
     body.theme-dark .CodeMirror-gutters {
       background: #0b1120;
       border-right: 1px solid #1f2937;
       color: #64748b;
     }
+    /* 行号让文字颜色偏灰，以免抢眼 */
     body.theme-dark .CodeMirror-linenumber {
       color: #475569;
     }
+    /* 光标用亮色描边便于在深色背景中看见 */
     body.theme-dark .CodeMirror-cursor {
       border-left: 2px solid #f8fafc;
     }
+    /* 选中区域背景用半透明蓝，保持与 accent 颜色一致 */
     body.theme-dark .CodeMirror-selected {
       background: rgba(59, 130, 246, 0.25) !important;
     }
+    /* 深色预览区域的颜色、链接、图片在 dark 模式里也单独处理 */
     body.theme-dark .markdown-preview-content {
       color: #e2e8f0;
     }
+    /* 里面的 a 链接用亮色，更显眼 */
     body.theme-dark .markdown-preview-content a {
       color: #93c5fd;
     }
+    /* 图片加阴影让深色背景下仍突出 */
     body.theme-dark .markdown-preview-content img {
       box-shadow: 0 24px 60px rgba(8, 47, 73, 0.55);
     }
+    /* figcaption 也跟随深色，文字调灰 */
     body.theme-dark .markdown-preview-content figcaption {
       color: #94a3b8;
     }
@@ -1132,6 +1208,7 @@ body[data-bs-theme="light"] .input-group-text {
       flex-direction: column;
       gap: 0;
     }
+    /* #markdown-preview-content 用 padding/overflow 让生成的 Markdown 内容可滚动显示 */
     #markdown-preview-content {
       flex: 1 1 0;
       min-height: 0 !important;
@@ -1140,18 +1217,21 @@ body[data-bs-theme="light"] .input-group-text {
       overflow: auto;
       padding: var(--pane-inner-padding);
     }
+    /* markdown-preview-content 作为容器设置 line-height、color 让文本更易读 */
     .markdown-preview-content {
       position: relative;
       width: 100%;
       color: var(--shell-text);
       line-height: 1.6;
     }
+    /* 代码块用 background + padding + overflow 控制滚动 */
     .markdown-preview-content pre {
       background: var(--preview-code-bg);
       border-radius: 4px;
       padding: 0.75rem;
       overflow: auto;
     }
+    /* 图片默认最大宽度限制，自动居中加圆角与阴影 */
     .markdown-preview-content img {
       max-width: min(100%, 720px);
       height: auto;
@@ -1162,27 +1242,33 @@ body[data-bs-theme="light"] .input-group-text {
       cursor: zoom-in;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    /* 鼠标移上图片时稍微放大并加强阴影 */
     .markdown-preview-content img:hover {
       transform: translateY(-2px) scale(1.01);
       box-shadow: 0 24px 55px rgba(15, 23, 42, 0.24);
     }
+    /* 聚焦图片时用 outline 告知用户当前元素 */
     .markdown-preview-content img:focus {
       outline: 3px solid rgba(59, 130, 246, 0.45);
       outline-offset: 4px;
     }
+    /* figure 用 margin/align 控制图片＋说明上下间距 */
     .markdown-preview-content figure {
       margin: 1.5rem auto;
       text-align: center;
     }
+    /* figcaption 给图片的说明设置 font-size 和 muted 颜色 */
     .markdown-preview-content figcaption {
       margin-top: 0.75rem;
       font-size: 0.9rem;
       color: var(--preview-muted);
     }
+    /* markdown-heading-with-copy 让标题右侧出现复制按钮 */
     .markdown-heading-with-copy {
       position: relative;
       padding-right: 2.5rem;
     }
+    /* markdown-heading-copy-btn 定位复制按钮，opacity 默认隐藏使界面简洁 */
     .markdown-heading-copy-btn {
       position: absolute;
       top: 50%;
@@ -1199,34 +1285,40 @@ body[data-bs-theme="light"] .input-group-text {
       pointer-events: none;
       transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
     }
+    /* hover/focus 后让按钮 fade in */
     .markdown-heading-copy-btn:focus,
     .markdown-heading-copy-btn:hover {
       background: color-mix(in srgb, var(--accent) 22%, transparent);
       color: color-mix(in srgb, var(--accent-strong) 85%, var(--shell-text));
       border-color: color-mix(in srgb, var(--accent) 65%, transparent);
     }
+    /* 当标题 hover 或复制按钮 focus 让其显现 */
     .markdown-heading-with-copy:hover .markdown-heading-copy-btn,
     .markdown-heading-copy-btn:focus {
       opacity: 1;
       pointer-events: auto;
     }
+    /* 深色下再调复制按钮的边框/背景/文字，保持可读 */
     body.theme-dark .markdown-heading-copy-btn {
       border-color: color-mix(in srgb, var(--accent) 48%, transparent);
       background: color-mix(in srgb, var(--accent) 18%, transparent);
       color: color-mix(in srgb, var(--accent-strong) 82%, var(--shell-text));
     }
+    /* 深色模式下的 hover/focus */
     body.theme-dark .markdown-heading-copy-btn:hover,
     body.theme-dark .markdown-heading-copy-btn:focus {
       background: color-mix(in srgb, var(--accent) 32%, transparent);
       color: var(--shell-text);
       border-color: color-mix(in srgb, var(--accent-strong) 72%, transparent);
     }
+    /* Heading highlight 用 box-shadow + background 帮助滚动定位 */
     .markdown-preview-content .markdown-heading-highlight {
       background: rgba(191, 219, 254, 0.45);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
       border-radius: 0.5rem;
       transition: background 1.2s ease, box-shadow 1.2s ease;
     }
+    /* 表格外壳设置 border、padding、scrollbar，保证表格也不会撑破界面 */
     .markdown-preview-table-wrapper {
       position: relative;
       margin: 1.25rem 0;
@@ -1241,17 +1333,21 @@ body[data-bs-theme="light"] .input-group-text {
       scrollbar-width: thin;
       scrollbar-color: color-mix(in srgb, var(--accent) 55%, transparent) transparent;
     }
+    /* WebKit 特有的滚动条样式，使滚动条看起来更细 */
     .markdown-preview-table-wrapper::-webkit-scrollbar {
       height: 8px;
       width: 8px;
     }
+    /* 滚动条滑块颜色也用 accent，让它和主题统一 */
     .markdown-preview-table-wrapper::-webkit-scrollbar-thumb {
       background: color-mix(in srgb, var(--accent) 45%, transparent);
       border-radius: 4px;
     }
+    /* 轨道保持透明，避免抢眼 */
     .markdown-preview-table-wrapper::-webkit-scrollbar-track {
       background: transparent;
     }
+    /* 表格本身宽度设置、颜色继承 */
     .markdown-preview-table-wrapper table {
       width: 100%;
       min-width: 100%;
@@ -1260,6 +1356,7 @@ body[data-bs-theme="light"] .input-group-text {
       table-layout: auto;
       color: var(--shell-text);
     }
+    /* caption 用加粗/左对齐做标题 */
     .markdown-preview-table-wrapper caption {
       caption-side: top;
       text-align: left;
@@ -1267,6 +1364,7 @@ body[data-bs-theme="light"] .input-group-text {
       margin-bottom: 0.75rem;
       color: var(--shell-text);
     }
+    /* 设定 thead sticky 让表格表头固定在可见区域 */
     .markdown-preview-table-wrapper thead th {
       position: sticky;
       top: 0;
@@ -1275,9 +1373,11 @@ body[data-bs-theme="light"] .input-group-text {
       color: var(--shell-text);
       box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--preview-border) 80%, transparent);
     }
+    /* 让奇数行背景稍微不同，增强可读性 */
     .markdown-preview-table-wrapper tbody tr:nth-child(odd) {
       background: var(--preview-table-row);
     }
+    /* th/td 共享的 border/padding/word-break 设置，避免内容撑破单元格 */
     .markdown-preview-table-wrapper th,
     .markdown-preview-table-wrapper td {
       border: 1px solid var(--preview-border);
@@ -1288,6 +1388,7 @@ body[data-bs-theme="light"] .input-group-text {
       white-space: normal;
       color: var(--shell-text);
     }
+    /* markdown-table-expand-btn 是浮在表格上的扩展按钮，设置 padding + backdrop-filter */
     .markdown-table-expand-btn {
       position: absolute;
       top: 0.75rem;
@@ -1307,6 +1408,7 @@ body[data-bs-theme="light"] .input-group-text {
       cursor: pointer;
       transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
+    /* hover/focus 用更浓的 accent 显示，提升可点击提示 */
     .markdown-table-expand-btn:hover,
     .markdown-table-expand-btn:focus {
       background: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -1314,17 +1416,21 @@ body[data-bs-theme="light"] .input-group-text {
       color: var(--shell-text);
       outline: none;
     }
+    /* focus-visible 再加个 glow，帮助键盘用户 */
     .markdown-table-expand-btn:focus-visible {
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
     }
+    /* copy-trigger-wrapper 包裹复制按钮，绝对定位使按钮悬在右上 */
     .copy-trigger-wrapper {
       position: relative;
       display: block;
     }
+    /* inline-copy 版本用于行内代码块，不用 block 流布局 */
     .copy-trigger-wrapper.inline-copy {
       display: inline-block;
       vertical-align: baseline;
     }
+    /* copy-trigger-btn 初始 opacity=0，hover/focus 再让它看见 */
     .copy-trigger-btn {
       position: absolute;
       top: 0.35rem;
@@ -1335,45 +1441,55 @@ body[data-bs-theme="light"] .input-group-text {
       line-height: 1.2;
       font-size: 0.75rem;
     }
+    /* hover/focus 让按钮淡入，保证可点击 */
     .copy-trigger-wrapper:hover .copy-trigger-btn,
     .copy-trigger-btn:focus {
       opacity: 1;
     }
+    /* PDF 浏览区域宽度铺满 */
     #pdf-pages {
       width: 100%;
     }
+    /* pdf-page-canvas 确保画布自适应宽度和自动高度 */
     .pdf-page-canvas {
       max-width: 100%;
       height: auto;
       background: #fff;
     }
+    /* navbar-nav 控制菜单项的排列和间距 */
     .navbar-nav {
       flex-wrap: wrap;
       gap: 0.5rem;
       align-items: center;
     }
+    /* nav-item 默认 flex 让按钮垂直居中 */
     .navbar-nav .nav-item {
       display: flex;
       align-items: center;
     }
+    /* dropdown-divider 控制栏内分割线高度和 margin */
     .navbar-nav .dropdown-divider {
       height: 1.5rem;
       margin: 0 0.35rem;
     }
+    /* 响应式媒体查询：小屏幕时让导航换方向以免挤在一起 */
     @media (max-width: 991.98px) {
       .navbar-nav {
         flex-direction: row;
         justify-content: flex-start;
       }
     }
+    /* 更小的手机屏幕再缩小 gap */
     @media (max-width: 575.98px) {
       .navbar-nav {
         gap: 0.4rem;
       }
     }
+    /* 图片模态框的 dialog 最大宽度限制，避免铺满屏幕 */
     #markdownImageModal .modal-dialog {
       max-width: min(92vw, 1080px);
     }
+    /* 设置图像弹窗的背景/圆角/阴影，同时用 backdrop-filter 添加磨砂感 */
     #markdownImageModal .modal-content {
       background: var(--surface-1);
       color: var(--shell-text);
@@ -1384,6 +1500,7 @@ body[data-bs-theme="light"] .input-group-text {
       overflow: hidden;
       box-shadow: var(--surface-shadow);
     }
+    /* modal-body 加 padding 和 gap 让图片+说明依次排列 */
     #markdownImageModal .modal-body {
       padding: 1.5rem;
       display: flex;
@@ -1391,6 +1508,7 @@ body[data-bs-theme="light"] .input-group-text {
       gap: 1rem;
       background: transparent;
     }
+    /* image-wrapper 用 flex 居中图片，同时用渐变背景框住 */
     #markdownImageModal .image-wrapper {
       display: flex;
       justify-content: center;
@@ -1400,6 +1518,7 @@ body[data-bs-theme="light"] .input-group-text {
       padding: 1rem;
       border: 1px solid var(--surface-border);
     }
+    /* image-wrapper img 控制 max-width/max-height，辅助 zoom 效果 shadow */
     #markdownImageModal .image-wrapper img {
       max-width: 100%;
       max-height: 80vh;
@@ -1408,11 +1527,13 @@ body[data-bs-theme="light"] .input-group-text {
       border-radius: 0.5rem;
       box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
     }
+    /* 图注用 small 字号和 muted 颜色 */
     #markdownImageCaption {
       font-size: 0.95rem;
       text-align: center;
       color: var(--preview-muted);
     }
+    /* 表格模态框设定最大宽度避免撑破 */
     #markdownTableModal .modal-dialog {
       max-width: min(95vw, 1280px);
     }
@@ -1423,12 +1544,14 @@ body[data-bs-theme="light"] .input-group-text {
       box-shadow: var(--surface-shadow);
       color: var(--shell-text);
     }
+    /* modal-body 负责内部 padding 与垂直间距 */
     #markdownTableModal .modal-body {
       padding: 1.75rem;
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
     }
+    /* #markdownTableModalBody 是可滚动的表格容器，设定最大高度 + 内边距 */
     #markdownTableModalBody {
       max-height: 80vh;
       overflow: auto;
@@ -1438,6 +1561,7 @@ body[data-bs-theme="light"] .input-group-text {
       padding: 1.25rem;
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
     }
+    /* 这里的 table 是弹窗内的表格，设置固定 min-width 保证列不挤 */
     #markdownTableModalBody table {
       width: max-content;
       min-width: min(1080px, 100%);
@@ -1447,6 +1571,7 @@ body[data-bs-theme="light"] .input-group-text {
       background: var(--preview-table-bg);
       color: var(--shell-text);
     }
+    /* th/td 共享边框/内边距，保持表格整齐 */
     #markdownTableModalBody th,
     #markdownTableModalBody td {
       border: 1px solid var(--preview-border);
@@ -1455,9 +1580,11 @@ body[data-bs-theme="light"] .input-group-text {
       vertical-align: middle;
       color: var(--shell-text);
     }
+    /* 弹窗表格也为奇数行加背景色 */
     #markdownTableModalBody tbody tr:nth-child(odd) {
       background: var(--preview-table-row);
     }
+    /* caption 在弹窗表格用右对齐、加粗 */
     #markdownTableModalBody caption {
       caption-side: top;
       text-align: left;
@@ -1465,6 +1592,7 @@ body[data-bs-theme="light"] .input-group-text {
       margin-bottom: 0.75rem;
       color: var(--shell-text);
     }
+    /* thead th 设为 sticky，让表头始终可见 */
     #markdownTableModalBody thead th {
       position: sticky;
       top: 0;
@@ -1473,18 +1601,22 @@ body[data-bs-theme="light"] .input-group-text {
       color: var(--shell-text);
       box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--preview-border) 72%, transparent);
     }
+    /* 弹窗底部的说明文字也用 muted 颜色 */
     #markdownTableModalCaption {
       font-size: 0.95rem;
       text-align: right;
       color: var(--preview-muted);
     }
+    /* tabs 模态的 dialog 宽度限制，防止过分拉伸 */
     #tabsModal .modal-dialog {
       max-width: min(900px, 96vw);
     }
+    /* modal-body 设置可滚动且有最大高度，避免列表撑破弹窗 */
     #tabsModal .modal-body {
       max-height: min(70vh, 560px);
       overflow: auto;
     }
+    /* page-tabs 用 CSS Grid 平铺小标签，auto-fit+minmax 保持弹性数量 */
     #tabsModal #page-tabs {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
@@ -1492,6 +1624,7 @@ body[data-bs-theme="light"] .input-group-text {
       align-items: stretch;
       margin-bottom: 0.5rem;
     }
+    /* page-tab 设定最小高度、圆角、背景和可抓取 cursor */
     #tabsModal #page-tabs .page-tab {
       display: inline-flex;
       align-items: center;
@@ -1509,31 +1642,37 @@ body[data-bs-theme="light"] .input-group-text {
       box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 10%, transparent);
       transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
     }
+    /* hover/focus-visible 增加阴影/位移提示是可交互项 */
     #tabsModal #page-tabs .page-tab:hover,
     #tabsModal #page-tabs .page-tab:focus-visible {
       transform: translateY(-1px);
       box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 18%, transparent);
       outline: none;
     }
+    /* is-active 状态用 accent 背景强调当前页 */
     #tabsModal #page-tabs .page-tab.is-active {
       background: var(--accent);
       color: #fff;
       border-color: var(--accent-strong);
       box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 28%, transparent);
     }
+    /* dragger 状态 cursor: grabbing 提示正在拖拽 */
     #tabsModal #page-tabs .page-tab:active {
       cursor: grabbing;
     }
+    /* workspace-modal 的 dialog 确保在大屏时有空隙，并用 flex 让内容撑满 */
     .workspace-modal .modal-dialog {
       max-width: min(960px, calc(100% - 2rem));
       margin: 1.5rem auto;
       height: calc(100% - 3rem);
       display: flex;
     }
+    /* workspace-modal 本身用 overflow:hidden 锁定滚动 */
     .workspace-modal {
       overflow: hidden;
       padding: 0 !important;
     }
+    /* workspace-modal 内部用渐变背景和大圆角，用 flex column 承载 header + actions */
     .workspace-modal .modal-content {
       border-radius: 24px;
       border: 1px solid var(--surface-border);
@@ -1546,20 +1685,24 @@ body[data-bs-theme="light"] .input-group-text {
       max-height: 100%;
       height: 100%;
     }
+    /* workspace-overlay-header 只负责固定顶部的标题区域 */
     .workspace-modal .workspace-overlay-header {
       flex-shrink: 0;
     }
+    /* overlay-actions 区域可以滚动，padding-right 防止滚动条遮挡内容 */
     .workspace-modal .workspace-overlay-actions {
       overflow-y: auto;
       padding-right: 0.25rem;
       flex: 1;
     }
+    /* 768px 以下让 workspace dialog 占满高度 */
     @media (max-width: 768px) {
       .workspace-modal .modal-dialog {
         height: 100%;
         margin: 0 auto;
       }
     }
+    /* workspace-modal-title 使用 clamp 让字号在不同屏幕自动缩放 */
     .workspace-modal-title {
       font-size: clamp(1.6rem, 3vw, 2rem);
     }
@@ -1570,13 +1713,16 @@ body[data-bs-theme="light"] .input-group-text {
       color: var(--shell-text);
       box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
     }
+    /* overlay-status 表示状态文字高度 */
     .workspace-overlay-status {
       min-height: 1.5rem;
     }
+    /* workspace-button-highlight 用 animation 提醒用户注意 */
     .workspace-button-highlight {
       animation: workspacePulse 1.4s ease-in-out 2;
       box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
     }
+    /* workspacePulse 动画通过 box-shadow 扩散来吸引视线 */
     @keyframes workspacePulse {
       0% {
         box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
@@ -1588,6 +1734,7 @@ body[data-bs-theme="light"] .input-group-text {
         box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
       }
     }
+    /* 远程工作区列表项使用 flex+gap，保持横/竖 layout 兼容 */
     #remote-workspace-list .list-group-item {
       display: flex;
       justify-content: space-between;
@@ -1600,16 +1747,20 @@ body[data-bs-theme="light"] .input-group-text {
       box-shadow: var(--surface-shadow);
       color: var(--shell-text);
     }
+    /* 多加一行 text-muted 的 margin-bottom 0 保持紧凑 */
     #remote-workspace-list .list-group-item .text-muted {
       margin-bottom: 0;
     }
+    /* 远程列表里的按钮用 min-width 保持一致大小 */
     #remote-workspace-list .list-group-item .btn {
       min-width: 96px;
     }
+    /* 远程工作区弹窗也用一套变量以便后面统一替换 */
     #remoteWorkspaceModal {
       --remote-surface: var(--surface-2);
       --remote-border: var(--surface-border);
     }
+    /* 远程 workspace 弹窗内容区域 */
     #remoteWorkspaceModal .modal-content {
       border-radius: 20px;
       border: 1px solid var(--remote-border);
@@ -1617,16 +1768,19 @@ body[data-bs-theme="light"] .input-group-text {
       box-shadow: var(--surface-shadow);
       color: var(--shell-text);
     }
+    /* 远程 workspace 表单背景也要跟 surface 保持一致 */
     #remoteWorkspaceModal .workspace-form {
       background: var(--remote-surface);
       border-color: var(--remote-border);
       color: var(--shell-text);
     }
+    /* #status-area 固定在顶部，用高 z-index 确保通知在最上层 */
     #status-area {
       top: 14px;
       z-index: 5000 !important;
       pointer-events: none;
     }
+    /* status-area 里的 alert 控制通知样式和阴影 */
     #status-area .alert {
       pointer-events: auto;
       min-width: 320px;
@@ -1635,15 +1789,19 @@ body[data-bs-theme="light"] .input-group-text {
       color: var(--shell-text);
       border: 1px solid var(--surface-border);
     }
+    /* review-session-top 控制复习相关 modal 的 z-index */
     .review-session-top {
       z-index: 2050;
     }
+    /* backdrop 继续保持高 z-index 以覆盖其他浮层 */
     .review-session-backdrop {
       z-index: 2040 !important;
     }
+    /* review modal dialog 限制宽度 */
     .review-session-top .modal-dialog {
       max-width: 1080px;
     }
+    /* review modal 内容区圆角+阴影+背景 */
     .review-session-top .modal-content {
       border-radius: 18px;
       border: 1px solid var(--surface-border);
@@ -1651,6 +1809,7 @@ body[data-bs-theme="light"] .input-group-text {
       background: color-mix(in srgb, var(--surface-1) 94%, var(--accent) 6%);
       color: var(--shell-text);
     }
+    /* review-surface 就是带阴影和背景的写字区域 */
     .review-surface {
       min-height: 190px;
       border-radius: 16px;
@@ -1664,13 +1823,16 @@ body[data-bs-theme="light"] .input-group-text {
       line-height: 1.55;
       color: var(--shell-text);
     }
+    /* mini-text 版本把高度减小 */
     .review-surface.review-mini-text {
       min-height: 120px;
       max-height: 220px;
     }
+    /* review-note 提供一个较高的最小高度 */
     .review-note {
       min-height: 140px;
     }
+    /* review-meta-card 用 dashed border 提示辅助信息 */
     .review-meta-card {
       border-radius: 12px;
       border: 1px dashed var(--surface-border);
@@ -1678,6 +1840,7 @@ body[data-bs-theme="light"] .input-group-text {
       background: color-mix(in srgb, var(--surface-1) 88%, transparent);
       color: var(--shell-text);
     }
+    /* review-score-btn 用 flex 拉伸按钮，并在 hover 时移动 */
     .review-score-btn {
       flex: 1 1 0;
       border-width: 2px;
@@ -1685,40 +1848,49 @@ body[data-bs-theme="light"] .input-group-text {
       letter-spacing: 0.02em;
       transition: transform 0.12s ease, box-shadow 0.2s ease;
     }
+    /* hover/focus-visible 让按钮微微抬起 */
     .review-score-btn:hover,
     .review-score-btn:focus-visible {
       transform: translateY(-1px);
       box-shadow: 0 12px 26px color-mix(in srgb, var(--accent) 22%, transparent);
     }
+    /* review-badge 只是为了让标签更粗一点 */
     .review-badge {
       font-weight: 600;
       letter-spacing: 0.02em;
     }
+    /* review-mini-text 是更小的文字，用于提示 */
     .review-mini-text {
       font-size: 0.9rem;
     }
+    /* review-prompt-toggle 用 dashed border 提示可交互 */
     .review-prompt-toggle {
       border: 1px dashed var(--surface-border);
     }
+    /* alert-accent 用 accent 颜色 + box-shadow 做弹出通知 */
     .alert-accent {
       background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
       border: 1px solid color-mix(in srgb, var(--accent-strong) 35%, transparent);
       color: var(--shell-text);
       box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 14%, transparent);
     }
+    /* 深色模式下的 alert 也需要相应的边框/阴影颜色 */
     body.theme-dark .alert-accent {
       background: color-mix(in srgb, var(--accent) 16%, var(--surface-1));
       border-color: color-mix(in srgb, var(--accent-strong) 45%, transparent);
       box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 18%, transparent);
     }
+    /* ai-learn-review-fav 是点赞按钮，hover/active 加一点立体感 */
     .ai-learn-review-fav {
       transition: transform 0.12s ease, box-shadow 0.2s ease;
     }
+    /* hover/focus-visible 让按钮稍微抬起/发光 */
     .ai-learn-review-fav:hover,
     .ai-learn-review-fav:focus-visible {
       transform: translateY(-1px);
       box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 20%, transparent);
     }
+    /* 激活状态加更强 box-shadow 表示已点赞 */
     .ai-learn-review-fav.active {
       box-shadow: 0 12px 26px color-mix(in srgb, var(--accent-strong) 24%, transparent);
     }
@@ -2959,7 +3131,7 @@ body[data-bs-theme="light"] .input-group-text {
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="exportOption" id="exportPageNotesHtmlOption" value="page_notes_html">
-            <label class="form-check-label" for="exportPageNotesHtmlOption">导出 当前页 Markdown（HTML）</label>
+            <label class="form-check-label" for="exportPageNotesHtmlOption">导出 当前页 HTML</label>
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="exportOption" id="exportPageAudioOption" value="page_audio">
@@ -2967,11 +3139,15 @@ body[data-bs-theme="light"] .input-group-text {
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="exportOption" id="exportNotesOption" value="notes">
-            <label class="form-check-label" for="exportNotesOption">导出 全部笔记 (Markdown)</label>
+            <label class="form-check-label" for="exportNotesOption">导出 全部页 Markdown</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="exportOption" id="exportNotesHtmlOption" value="notes_html">
+            <label class="form-check-label" for="exportNotesHtmlOption">导出 全部页 HTML</label>
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="exportOption" id="exportTexOption" value="tex">
-            <label class="form-check-label" for="exportTexOption">导出 全部 TeX</label>
+            <label class="form-check-label" for="exportTexOption">导出 全部页 TeX</label>
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="exportOption" id="exportLearnOption" value="learn">
@@ -2983,7 +3159,7 @@ body[data-bs-theme="light"] .input-group-text {
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="exportOption" id="exportAudioOption" value="audio">
-            <label class="form-check-label" for="exportAudioOption">导出 全部讲稿语音 (MP3)</label>
+            <label class="form-check-label" for="exportAudioOption">导出 完整讲稿语音 (MP3)</label>
           </div>
         </div>
         <div class="modal-footer">
@@ -7299,8 +7475,14 @@ function syncMarkdownEditorToPreview(container) {
   }
 
   function getMarkdownScrollContainer(preview, wrapper) {
-    if (wrapper && typeof wrapper.scrollTop === 'number') return wrapper;
+    const isScrollable = el => {
+      if (!el || typeof el.scrollTop !== 'number') return false;
+      return Math.abs(el.scrollHeight - el.clientHeight) > 1;
+    };
+    if (isScrollable(preview)) return preview;
+    if (isScrollable(wrapper)) return wrapper;
     if (preview && typeof preview.scrollTop === 'number') return preview;
+    if (wrapper && typeof wrapper.scrollTop === 'number') return wrapper;
     return null;
   }
 
@@ -8452,7 +8634,7 @@ function syncMarkdownEditorToPreview(container) {
       }).then(blob => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `page_${pageNumber}_notes.html`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-        showStatus(`第 ${pageNumber} 页 Markdown HTML 已导出`, 'success', 2500);
+        showStatus(`第 ${pageNumber} 页 HTML 已导出`, 'success', 2500);
       }).catch(e=>alert('导出失败：'+e.message));
       return;
     }
@@ -8476,7 +8658,18 @@ function syncMarkdownEditorToPreview(container) {
       }).then(blob => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = 'notes.md'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-        showStatus('全部笔记已导出', 'success', 2500);
+        showStatus('全部页 Markdown 已导出', 'success', 2500);
+      }).catch(e=>alert('导出失败：'+e.message));
+      return;
+    }
+    if(opt === 'notes_html'){
+      fetch(appendWorkspaceQuery('/export_notes_html')).then(res => {
+        if(res.ok) return res.blob();
+        return res.json().then(data=>{throw new Error(data.error||'导出失败')});
+      }).then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'notes.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        showStatus('全部页 HTML 已导出', 'success', 2500);
       }).catch(e=>alert('导出失败：'+e.message));
       return;
     }

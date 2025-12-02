@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import tempfile
 import threading
 import uuid
@@ -16,6 +17,7 @@ from werkzeug.utils import secure_filename
 
 from .oss_client import (
     download_workspace_package,
+    get_workspace_package_meta,
     list_workspace_packages as oss_list_workspace_packages,
     upload_workspace_package,
     workspace_package_exists,
@@ -67,6 +69,47 @@ _PORTABLE_ERROR: Optional[str] = None
 _SHARED_REGISTRY_DIR = Path(tempfile.gettempdir()) / "benort_workspace_registry"
 
 
+def _resolve_remote_cache_ttl_seconds() -> int:
+    """How long to trust remote cache files when metadata is unavailable."""
+
+    env_seconds = os.environ.get("BENORT_REMOTE_CACHE_TTL_SECONDS")
+    if env_seconds:
+        try:
+            seconds = int(env_seconds)
+            if seconds >= 0:
+                return seconds
+        except ValueError:
+            pass
+    env_days = os.environ.get("BENORT_REMOTE_CACHE_TTL_DAYS")
+    if env_days:
+        try:
+            days_value = int(env_days)
+            if days_value >= 0:
+                return days_value * 86400
+        except ValueError:
+            pass
+    return 30 * 24 * 3600
+
+
+REMOTE_CACHE_TTL_SECONDS = _resolve_remote_cache_ttl_seconds()
+
+
+def _remote_cache_dir() -> Path:
+    env_dir = (os.environ.get("BENORT_REMOTE_CACHE_DIR") or "").strip()
+    candidates = []
+    if env_dir:
+        candidates.append(Path(env_dir).expanduser())
+    candidates.append(Path.home() / ".cache" / "benort" / "remote_workspaces")
+    candidates.append(Path(tempfile.gettempdir()) / "benort_remote_workspaces")
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            return candidate
+        except Exception:
+            continue
+    return Path(tempfile.gettempdir())
+
+
 def _ensure_suffix(path: str) -> str:
     if path.endswith(".benort"):
         return path
@@ -98,6 +141,82 @@ def _normalize_remote_name_for_open(name: str) -> str:
     if not normalized.lower().endswith(".benort"):
         normalized = f"{normalized}.benort"
     return normalized
+
+
+def _remote_cache_path(name: str) -> Path:
+    normalized = _normalize_remote_name_for_open(name)
+    safe = secure_filename(normalized.replace("/", "__")) or "workspace.benort"
+    if not safe.lower().endswith(".benort"):
+        safe = f"{safe}.benort"
+    return _remote_cache_dir() / safe
+
+
+def _cleanup_remote_cache_sidecars(base_path: Path) -> None:
+    for suffix in ("-wal", "-shm"):
+        try:
+            Path(f"{base_path}{suffix}").unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+def _coerce_timestamp(value: Any) -> Optional[float]:
+    try:
+        ts = float(value)
+        if ts > 0:
+            return ts
+    except (TypeError, ValueError):
+        return None
+    return None
+
+
+def _should_refresh_remote_cache(cache_path: Path, meta: Optional[dict]) -> bool:
+    if not cache_path.exists():
+        return True
+    try:
+        cache_mtime = cache_path.stat().st_mtime
+    except OSError:
+        return True
+    remote_ts = _coerce_timestamp(meta.get("last_modified")) if isinstance(meta, dict) else None
+    if remote_ts is not None:
+        return cache_mtime < remote_ts
+    if REMOTE_CACHE_TTL_SECONDS > 0:
+        return (time.time() - cache_mtime) > REMOTE_CACHE_TTL_SECONDS
+    return False
+
+
+def _prepare_remote_workspace(remote_key: str, *, local_hint: Optional[str] = None) -> Path:
+    cache_path = Path(local_hint).expanduser() if local_hint else _remote_cache_path(remote_key)
+    default_path = _remote_cache_path(remote_key)
+    if not cache_path.exists() and cache_path != default_path:
+        cache_path = default_path
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        cache_path = default_path
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+    meta = get_workspace_package_meta(remote_key)
+    needs_download = _should_refresh_remote_cache(cache_path, meta)
+    if needs_download:
+        _cleanup_remote_cache_sidecars(cache_path)
+        try:
+            download_workspace_package(remote_key, str(cache_path))
+        except Exception:
+            if not cache_path.exists():
+                raise
+        else:
+            remote_ts = _coerce_timestamp(meta.get("last_modified")) if isinstance(meta, dict) else None
+            if remote_ts:
+                try:
+                    os.utime(cache_path, (remote_ts, remote_ts))
+                except Exception:
+                    pass
+            else:
+                try:
+                    os.utime(cache_path, None)
+                except Exception:
+                    pass
+    return cache_path
 
 
 def _default_local_workspace_dir() -> Path:
@@ -203,13 +322,7 @@ def _recover_workspace(workspace_id: str) -> WorkspaceHandle:
         if not remote_key:
             raise WorkspaceNotFoundError(workspace_id)
         local_hint = record.get("local_path") or ""
-        temp_path = Path(local_hint) if local_hint else Path(_remote_tempfile(remote_key))
-        try:
-            if not temp_path.exists():
-                download_workspace_package(remote_key, str(temp_path))
-        except Exception:
-            temp_path = Path(_remote_tempfile(remote_key))
-            download_workspace_package(remote_key, str(temp_path))
+        temp_path = _prepare_remote_workspace(remote_key, local_hint=local_hint or None)
         package = BenortPackage(str(temp_path))
         handle = WorkspaceHandle(
             workspace_id=workspace_id,
@@ -292,12 +405,7 @@ def discover_local_workspaces(
 
 
 def _remote_tempfile(name: str) -> str:
-    safe = secure_filename(name or "") or "workspace"
-    safe = safe.replace(".benort", "")
-    temp_dir = Path(tempfile.gettempdir()) / "benort_remote_workspaces"
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    temp_path = temp_dir / f"{safe}_{uuid.uuid4().hex[:6]}.benort"
-    return str(temp_path)
+    return str(_remote_cache_path(name))
 
 
 def _register(handle: WorkspaceHandle) -> WorkspaceHandle:
@@ -399,7 +507,12 @@ def create_remote_workspace(path: str, project_name: Optional[str] = None) -> Wo
     remote_name = _sanitize_remote_name(path)
     if workspace_package_exists(remote_name):
         raise FileExistsError("远程工作区已存在")
-    temp_path = Path(_remote_tempfile(remote_name))
+    temp_path = _remote_cache_path(remote_name)
+    _cleanup_remote_cache_sidecars(temp_path)
+    try:
+        temp_path.unlink(missing_ok=True)
+    except Exception:
+        pass
     package = create_package(str(temp_path), project_name or temp_path.stem)
     upload_workspace_package(str(temp_path), remote_name, overwrite=False)
     workspace_id = uuid.uuid4().hex
@@ -420,8 +533,7 @@ def open_remote_workspace(path: str) -> WorkspaceHandle:
     if not oss_is_configured():
         raise RuntimeError("未配置 OSS，无法打开远程工作区")
     remote_name = _normalize_remote_name_for_open(path)
-    temp_path = Path(_remote_tempfile(remote_name))
-    download_workspace_package(remote_name, str(temp_path))
+    temp_path = _prepare_remote_workspace(remote_name)
     package = BenortPackage(str(temp_path))
     workspace_id = uuid.uuid4().hex
     handle = WorkspaceHandle(
@@ -453,11 +565,6 @@ def close_workspace(workspace_id: str) -> None:
     if handle:
         local_path = getattr(handle, "local_path", None) or getattr(handle.package, "path", None)
         handle.package.close()
-        if handle.mode == "cloud" and local_path:
-            try:
-                os.remove(str(local_path))
-            except Exception:
-                pass
 
 
 def get_workspace(workspace_id: str) -> WorkspaceHandle:

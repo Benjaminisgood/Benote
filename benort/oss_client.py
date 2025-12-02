@@ -378,6 +378,32 @@ def workspace_package_exists(name: str) -> bool:
         return False
 
 
+def get_workspace_package_meta(name: str) -> Optional[Dict[str, object]]:
+    """Return lightweight metadata for a workspace package."""
+
+    settings = get_settings()
+    if not settings:
+        return None
+    bucket = _get_bucket(settings)
+    key = _workspace_object_key(settings, name)
+    try:
+        result = bucket.head_object(key)
+    except Exception:
+        return None
+    size = getattr(result, "content_length", None)
+    if size is None:
+        try:
+            size = int(getattr(result, "headers", {}).get("Content-Length"))
+        except Exception:
+            size = None
+    return {
+        "etag": getattr(result, "etag", None),
+        "size": size,
+        "last_modified": getattr(result, "last_modified", None),
+        "key": key,
+    }
+
+
 def download_workspace_package(name: str, dest_path: str) -> None:
     settings = get_settings()
     if not settings:
