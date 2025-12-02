@@ -43,6 +43,12 @@ def _resolve_learning_record_ttl_seconds() -> int:
 
 LEARNING_RECORD_TTL_SECONDS = _resolve_learning_record_ttl_seconds()
 
+
+class WorkspaceVersionConflict(Exception):
+    """Raised when a workspace save would overwrite a newer version."""
+
+    pass
+
 DEFAULT_PAGES: list[dict[str, Any]] = [
     {
         "pageId": f"default_{uuid.uuid4().hex[:8]}",
@@ -1327,6 +1333,7 @@ class BenortPackage:
         llm_meta = meta.get("llm") if isinstance(meta.get("llm"), dict) else {}
         return {
             "project": meta.get("name") or self.path.stem,
+            "updatedAt": meta.get("updatedAt"),
             "pages": pages,
             "template": template,
             "markdownTemplate": md_template,
@@ -1337,6 +1344,24 @@ class BenortPackage:
         }
 
     def save_project(self, payload: dict[str, Any]) -> dict[str, Any]:
+        expected_ts_raw = payload.get("clientUpdatedAt") or payload.get("expectedUpdatedAt")
+        existing_meta = self._get_meta("project", {}) or {}
+        if not isinstance(existing_meta, dict):
+            existing_meta = {}
+        if expected_ts_raw is not None:
+            try:
+                expected_ts = float(expected_ts_raw)
+            except (TypeError, ValueError):
+                expected_ts = None
+            else:
+                current_ts = existing_meta.get("updatedAt")
+                try:
+                    current_ts_val = float(current_ts) if current_ts is not None else None
+                except (TypeError, ValueError):
+                    current_ts_val = None
+                if current_ts_val is not None and expected_ts is not None and current_ts_val - expected_ts > 1e-6:
+                    raise WorkspaceVersionConflict("工作区已被其他会话更新，请刷新后再保存")
+
         pages = payload.get("pages") or []
         self.save_pages(pages)
         if "template" in payload:
@@ -1347,7 +1372,7 @@ class BenortPackage:
             self._replace_project_resources(payload.get("resources"))
         if "bib" in payload:
             self._replace_project_references(payload.get("bib"))
-        meta = self._get_meta("project", {}) or {}
+        meta = existing_meta
         if not isinstance(meta, dict):
             meta = {}
         meta["updatedAt"] = time.time()
@@ -1371,4 +1396,5 @@ __all__ = [
     "BenortPackage",
     "PageRecord",
     "create_package",
+    "WorkspaceVersionConflict",
 ]

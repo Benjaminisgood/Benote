@@ -4312,6 +4312,15 @@ function jumpToPage(targetIdx) {
     return `${size.toFixed(precision)} ${units[idx]}`;
   }
 
+  function normalizeTimestamp(value){
+    if(value === null || value === undefined) return null;
+    const num = Number(value);
+    if(Number.isFinite(num) && num > 0){
+      return num;
+    }
+    return null;
+  }
+
   function updateWorkspaceEndpoints(){
     if(currentWorkspace && currentWorkspace.workspace_id){
       const encoded = encodeURIComponent(currentWorkspace.workspace_id);
@@ -4358,6 +4367,7 @@ function jumpToPage(targetIdx) {
   function setWorkspace(handle){
     const normalized = normalizeWorkspace(handle);
     currentWorkspace = normalized;
+    projectUpdatedAt = null;
     updateWorkspaceEndpoints();
     updateWorkspaceUi();
     notifyWorkspaceChangeHandlers();
@@ -5772,6 +5782,7 @@ function jumpToPage(targetIdx) {
   }
 
   let projectMetadata = {};
+  let projectUpdatedAt = null;
   let projectListCache = [];
   let projectRenameTarget = '';
   let projectDeleteTarget = '';
@@ -5927,6 +5938,7 @@ function jumpToPage(targetIdx) {
         return {
           locked: !!currentWorkspace.locked,
           unlocked: !!currentWorkspace.unlocked,
+          updatedAt: projectUpdatedAt,
         };
       }
     }
@@ -9093,6 +9105,7 @@ function syncMarkdownEditorToPreview(container) {
       pages: pagesData,
       resources: globalResources,
       llm: getLlmPayload(),
+      clientUpdatedAt: projectUpdatedAt,
     };
     saveRequestQueue = saveRequestQueue
       .catch(() => {})
@@ -9102,21 +9115,29 @@ function syncMarkdownEditorToPreview(container) {
         body: JSON.stringify(payload),
       }))
       .then(async response => {
-        if (!response.ok) {
-          let message = '保存接口返回错误';
-          try {
-            const parsed = await parseJsonSafe(response);
-            if(parsed.json && parsed.json.error){
-              message = parsed.json.error;
-            } else if(parsed.text){
-              message = parsed.text;
-            } else {
-              message = `HTTP ${response.status}`;
-            }
-          } catch (e) {
-            message = `HTTP ${response.status}`;
+        let parsed = {};
+        try {
+          parsed = await response.json();
+        } catch (e) {
+          parsed = {};
+        }
+        const explicitFailure = parsed && Object.prototype.hasOwnProperty.call(parsed, 'success') && parsed.success === false;
+        if (!response.ok || explicitFailure) {
+          const message = (parsed && parsed.error) ? parsed.error : `HTTP ${response.status}`;
+          if(response.status === 409){
+            showStatus('云端有新版本，请刷新后再保存', 'warning', 6000);
           }
           throw new Error(message);
+        }
+        if(parsed && Object.prototype.hasOwnProperty.call(parsed, 'updatedAt')){
+          const ts = normalizeTimestamp(parsed.updatedAt);
+          if(ts !== null){
+            projectUpdatedAt = ts;
+            if(currentProject){
+              const existingMeta = projectMetadata[currentProject] || {};
+              projectMetadata[currentProject] = Object.assign({}, existingMeta, {updatedAt: projectUpdatedAt});
+            }
+          }
         }
         callbacks.forEach(cb => {
           try {
@@ -9125,6 +9146,7 @@ function syncMarkdownEditorToPreview(container) {
             console.error('saveProject 回调执行失败:', err);
           }
         });
+        return parsed;
       })
       .catch(err => {
         console.error('保存项目失败:', err);
@@ -9182,6 +9204,11 @@ function syncMarkdownEditorToPreview(container) {
         if (!data) return;
         if(Object.prototype.hasOwnProperty.call(data, 'locked')){
           updateWorkspaceSecurityState({locked: !!data.locked, unlocked: !!data.unlocked});
+        }
+        projectUpdatedAt = normalizeTimestamp(data.updatedAt);
+        if(currentProject){
+          const existingMeta = projectMetadata[currentProject] || {};
+          projectMetadata[currentProject] = Object.assign({}, existingMeta, {updatedAt: projectUpdatedAt});
         }
         if(data.llm && typeof data.llm === 'object'){
           llmSettings = normalizeLlmSettings(data.llm);

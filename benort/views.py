@@ -58,7 +58,7 @@ from .llm import (
     list_llm_providers,
     resolve_llm_config,
 )
-from .package import AssetRecord, BenortPackage
+from .package import AssetRecord, BenortPackage, WorkspaceVersionConflict
 from .workspace import (
     WorkspaceLockedError,
     WorkspaceNotFoundError,
@@ -2529,6 +2529,8 @@ def api_workspace_project_save(workspace_id: str):
     package = handle.package
     try:
         updated = package.save_project(data)
+    except WorkspaceVersionConflict as exc:
+        return api_error(str(exc), 409)
     except Exception as exc:
         return api_error(str(exc), 500)
     if handle.mode == "cloud":
