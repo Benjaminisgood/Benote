@@ -643,6 +643,16 @@ class BenortPackage:
             else:
                 favorite_flag = bool(raw)
             columns["favorite"] = 1 if favorite_flag else 0
+        if "input" in updates:
+            input_val = updates.get("input")
+            if input_val is not None:
+                columns["input"] = str(input_val)
+        if "context" in updates:
+            context_val = updates.get("context")
+            if context_val is None:
+                columns["context"] = None
+            else:
+                columns["context"] = str(context_val)
         if "output" in updates:
             output_val = updates.get("output")
             if output_val is not None:

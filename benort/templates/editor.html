@@ -1995,6 +1995,58 @@
       color: var(--shell-text);
       border: 1px solid var(--surface-border);
     }
+    /* review 模块的卡片配色，随主题和皮肤变化 */
+    .review-chip {
+      background: color-mix(in srgb, var(--surface-1) 88%, var(--accent) 12%);
+      border: 1px solid color-mix(in srgb, var(--surface-border) 72%, var(--accent-strong) 28%);
+      color: var(--shell-text);
+      padding: 0.35rem 0.55rem;
+      border-radius: 999px;
+    }
+    .review-chip-muted {
+      background: color-mix(in srgb, var(--surface-1) 92%, var(--shell-text) 8%);
+      border-color: color-mix(in srgb, var(--surface-border) 82%, var(--accent) 12%);
+    }
+    .review-chip-strong {
+      background: color-mix(in srgb, var(--surface-1) 80%, var(--accent-strong) 20%);
+    }
+    .review-chip-info {
+      background: color-mix(in srgb, var(--surface-1) 84%, var(--accent) 16%);
+    }
+    .review-chip-success {
+      background: color-mix(in srgb, var(--surface-1) 84%, #22c55e 16%);
+    }
+    .review-chip-warning {
+      background: color-mix(in srgb, var(--surface-1) 84%, #f59e0b 16%);
+      color: var(--shell-text);
+    }
+    .review-chip-danger {
+      background: color-mix(in srgb, var(--surface-1) 82%, #ef4444 18%);
+      color: var(--shell-text);
+    }
+    /* AI 复习列表里的卡片底色随主题渐变 */
+    #aiLearnReviewModal .ai-learn-review-item {
+      background: color-mix(in srgb, var(--surface-1) 92%, var(--accent) 8%);
+      border: 1px solid color-mix(in srgb, var(--surface-border) 78%, var(--accent-strong) 22%);
+      box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--shell-text);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      outline: none;
+    }
+    #aiLearnReviewModal .ai-learn-review-item:hover,
+    #aiLearnReviewModal .ai-learn-review-item:focus-visible {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--accent-strong) 46%, var(--surface-border));
+      box-shadow: 0 16px 34px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    #aiLearnReviewModal .ai-learn-review-item .card-body {
+      background: transparent;
+      color: inherit;
+    }
+    #aiLearnReviewModal .ai-learn-review-item .review-card-meta {
+      color: color-mix(in srgb, var(--shell-text) 82%, transparent);
+    }
     /* review-session-top 控制复习相关 modal 的 z-index */
     .review-session-top {
       z-index: 2050;
@@ -2013,6 +2065,31 @@
       border: 1px solid var(--surface-border);
       box-shadow: var(--surface-shadow);
       background: color-mix(in srgb, var(--surface-1) 94%, var(--accent) 6%);
+      color: var(--shell-text);
+    }
+    /* 复习弹窗里的可编辑区域采用主题色背景 */
+    .review-editor {
+      background: color-mix(in srgb, var(--surface-1) 92%, var(--accent) 8%);
+      border: 1px solid color-mix(in srgb, var(--surface-border) 76%, var(--accent-strong) 24%);
+      border-radius: 14px;
+      color: var(--shell-text);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
+      min-height: 120px;
+      line-height: 1.55;
+    }
+    .review-editor:focus {
+      border-color: color-mix(in srgb, var(--accent-strong) 54%, var(--surface-border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+    .review-input {
+      background: color-mix(in srgb, var(--surface-1) 94%, var(--accent) 6%);
+      border: 1px solid color-mix(in srgb, var(--surface-border) 76%, var(--accent-strong) 24%);
+      color: var(--shell-text);
+      border-radius: 12px;
+    }
+    .review-input:focus {
+      border-color: color-mix(in srgb, var(--accent-strong) 52%, var(--surface-border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
       color: var(--shell-text);
     }
     /* review-surface 就是带阴影和背景的写字区域 */
@@ -2784,7 +2861,7 @@
                 </div>
               </div>
               <div class="alert alert-accent mt-3 mb-2 py-2 small" id="ai-learn-review-hint">
-                收藏的学习结果会永久保留，未收藏的会在 30 天后自动清理。点击“复习”将打开顶层复习卡片，可记录笔记并安排下一次复习。
+                收藏的学习结果会永久保留，未收藏的会在 30 天后自动清理。点击任意卡片即可进入复习模式，记录笔记并安排下一次复习。
               </div>
               <div id="ai-learn-review-empty" class="text-center text-muted small py-4">暂无学习记录，完成一次 AI 学习后即可在此复盘。</div>
               <div id="ai-learn-review-list" class="d-flex flex-column gap-3"></div>
@@ -2802,14 +2879,14 @@
             <div class="modal-header">
               <div>
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                  <span class="badge bg-primary-subtle text-primary review-badge d-none" id="ai-review-category-badge"></span>
-                  <span class="badge bg-secondary-subtle text-secondary review-badge d-none" id="ai-review-method-badge"></span>
-                  <span class="badge bg-warning-subtle text-dark review-badge d-none" id="ai-review-due-badge"></span>
-                  <span class="badge bg-success-subtle text-success review-badge d-none" id="ai-review-status-badge"></span>
+                  <span class="badge review-badge d-none" id="ai-review-category-badge"></span>
+                  <span class="badge review-badge d-none" id="ai-review-method-badge"></span>
+                  <span class="badge review-badge d-none" id="ai-review-due-badge"></span>
+                  <span class="badge review-badge d-none" id="ai-review-status-badge"></span>
                   <span class="badge review-badge d-none" id="ai-review-last-badge"></span>
                 </div>
                 <h5 class="modal-title" id="aiLearnReviewSessionModalLabel">复习模式</h5>
-                <div class="text-muted small" id="ai-review-meta">根据历史学习结果生成复习卡片，记录复盘过程。</div>
+                <div class="text-muted small" id="ai-review-meta">根据历史学习结果生成复习卡片，可编辑问答并记录复盘过程。</div>
               </div>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -2817,31 +2894,39 @@
               <div class="row g-3">
                 <div class="col-lg-7">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="text-muted small">知识卡片</div>
+                    <div class="text-muted small">知识卡片（可编辑）</div>
                     <div class="d-flex gap-2">
                       <button type="button" class="btn btn-sm btn-outline-secondary" id="ai-review-copy-output">复制</button>
                     </div>
                   </div>
-                  <div class="review-surface" id="ai-review-output"></div>
+                  <textarea class="form-control review-editor" id="ai-review-output-edit" rows="10" placeholder="调整答案内容后保存"></textarea>
                   <button class="btn btn-sm btn-outline-secondary mt-3 review-prompt-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#ai-review-input-collapse" aria-expanded="false" aria-controls="ai-review-input-collapse">
-                    查看原始输入 / 上下文
+                    查看 / 编辑原始输入与上下文
                   </button>
                   <div class="collapse mt-2" id="ai-review-input-collapse">
-                    <div class="text-muted small mb-1">学习输入</div>
-                    <div class="review-surface review-mini-text mb-2" id="ai-review-input"></div>
-                    <div class="text-muted small mb-1">上下文</div>
-                    <div class="review-surface review-mini-text" id="ai-review-context"></div>
+                    <label class="form-label mb-1" for="ai-review-input-edit">问题（可编辑）</label>
+                    <textarea class="form-control review-editor review-mini-text mb-2" id="ai-review-input-edit" rows="4" placeholder="修改提问或题干"></textarea>
+                    <label class="form-label mb-1" for="ai-review-context-edit">上下文（可选）</label>
+                    <textarea class="form-control review-editor review-mini-text" id="ai-review-context-edit" rows="4" placeholder="记录或修订关联的上下文"></textarea>
                   </div>
                 </div>
                 <div class="col-lg-5">
                   <div class="mb-3">
                     <label class="form-label" for="ai-review-note">复习笔记</label>
-                    <textarea class="form-control review-note" id="ai-review-note" rows="6" placeholder="记录新的例子、未掌握的点、记忆钩子..."></textarea>
+                    <textarea class="form-control review-note review-editor" id="ai-review-note" rows="6" placeholder="记录新的例子、未掌握的点、记忆钩子..."></textarea>
                   </div>
                   <div class="mb-3">
                     <label class="form-label" for="ai-review-category">分类（可编辑）</label>
-                    <input type="text" class="form-control" id="ai-review-category" list="ai-learn-category-options" placeholder="输入或选择分类">
+                    <input type="text" class="form-control review-input" id="ai-review-category" list="ai-learn-category-options" placeholder="输入或选择分类">
                     <div class="form-text">修改后会同步更新记录，方便筛选。</div>
+                  </div>
+                  <div class="d-flex gap-2 flex-wrap mb-3">
+                    <button type="button" class="btn btn-primary flex-grow-1" id="ai-review-save-content">保存问答内容</button>
+                    <button type="button" class="btn btn-outline-secondary flex-grow-1" id="ai-review-save-note">保存笔记</button>
+                  </div>
+                  <div class="d-flex gap-2 flex-wrap mb-3">
+                    <button type="button" class="btn btn-outline-primary flex-grow-1" id="ai-review-toggle-fav">收藏</button>
+                    <button type="button" class="btn btn-outline-danger flex-grow-1" id="ai-review-delete">删除</button>
                   </div>
                   <div class="review-meta-card mb-3">
                     <div class="d-flex justify-content-between align-items-start">
@@ -2856,15 +2941,12 @@
                     </div>
                     <div class="text-muted small mt-2" id="ai-review-interval"></div>
                   </div>
-                  <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-outline-secondary flex-grow-1" id="ai-review-save-note">保存笔记</button>
-                  </div>
                 </div>
               </div>
               <div class="mt-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                   <div class="text-muted small" id="ai-review-hint">选择符合记忆状态的按钮即可记录复习效果并安排下一次复习。</div>
-                  <div class="badge bg-info text-dark review-badge d-none" id="ai-review-session-status"></div>
+                  <div class="badge review-badge review-chip review-chip-info d-none" id="ai-review-session-status"></div>
                 </div>
                 <div class="d-flex gap-2 flex-column flex-md-row">
                   <button type="button" class="btn btn-outline-danger review-score-btn" data-review-score="again">再来（效果 1）</button>
@@ -9949,14 +10031,46 @@ applyDefaultWorkspaceIfNeeded();
       });
   }
 
-  function buildLearningContext() {
+  // Choose the context scope based on where the learning input was captured.
+  function resolveLearningContextSource() {
     const page = pagesData[currentPageIdx] || {};
-    const chunks = [];
-    if (page.content) chunks.push('LaTeX:\n' + page.content);
-    if (page.notes) chunks.push('Markdown:\n' + page.notes);
-    if (page.script) chunks.push('Script:\n' + page.script);
-    const context = chunks.join('\n\n');
-    return context.length > 3000 ? context.slice(0, 3000) + '\n\n…（上下文已截断）' : context;
+    const pageId = typeof page.pageId === 'string' ? page.pageId : '';
+    const meta = lastLearningApplyMeta || {};
+    const samePageByIdx = typeof meta.pageIdx === 'number' && meta.pageIdx === currentPageIdx;
+    const samePageById = pageId && typeof meta.pageId === 'string' && meta.pageId === pageId;
+    const metaMatches = samePageByIdx || samePageById;
+
+    if (metaMatches) {
+      if (meta.target === 'script') {
+        return {type: 'script', label: '讲稿', value: page.script || ''};
+      }
+      if (meta.target === 'editor') {
+        const mode = meta.mode === 'markdown' ? 'markdown' : 'latex';
+        if (mode === 'markdown') {
+          return {type: 'markdown', label: 'Markdown', value: page.notes || ''};
+        }
+        return {type: 'latex', label: 'LaTeX', value: page.content || ''};
+      }
+    }
+
+    if (document.activeElement && document.activeElement.id === 'page-script') {
+      return {type: 'script', label: '讲稿', value: page.script || ''};
+    }
+
+    if (currentEditMode === 'markdown') {
+      return {type: 'markdown', label: 'Markdown', value: page.notes || ''};
+    }
+
+    return {type: 'latex', label: 'LaTeX', value: page.content || ''};
+  }
+
+  function buildLearningContext() {
+    const source = resolveLearningContextSource();
+    const value = source.value || '';
+    const prefix = value && source.label ? `${source.label}:\n` : '';
+    const fullText = value ? `${prefix}${value}` : '';
+    const text = fullText.length > 3000 ? `${fullText.slice(0, 3000)}\n\n…（上下文已截断）` : fullText;
+    return {text, source};
   }
 
   function updateLearningContext(auto = false, showMessage = false) {
@@ -9964,12 +10078,15 @@ applyDefaultWorkspaceIfNeeded();
     if (!contextEl) return;
     if (auto) return;
     const context = buildLearningContext();
-    contextEl.value = context || '';
+    contextEl.value = context.text || '';
     if (!showMessage) return;
-    if (context) {
-      showStatus('已获取当前页上下文', 'info', 2200);
+    const label = context.source && context.source.label ? context.source.label : '';
+    if (context.text) {
+      const msg = label ? `已获取当前页 ${label} 上下文` : '已获取当前页上下文';
+      showStatus(msg, 'info', 2200);
     } else {
-      showStatus('当前页没有可用的上下文', 'warning', 2500);
+      const msg = label ? `当前页没有可用的 ${label} 上下文` : '当前页没有可用的上下文';
+      showStatus(msg, 'warning', 2500);
     }
   }
 
@@ -10797,8 +10914,7 @@ applyDefaultWorkspaceIfNeeded();
     if (assistantModal) {
       assistantModal.hide();
     }
-    showStatus('已将当前问答推送到 AI 复习面板，可继续编辑后保存', 'success', 2200);
-    openLearningReviewModal();
+    showStatus('已将当前问答推送到 AI 学习结果，可在弹窗中编辑后保存', 'success', 2200);
   }
 
   function gatherLearningResultFormValues() {
@@ -11237,22 +11353,22 @@ applyDefaultWorkspaceIfNeeded();
     const nextMs = state.nextReviewAt ? state.nextReviewAt * 1000 : null;
     const lastMs = state.lastReviewAt ? state.lastReviewAt * 1000 : null;
     let dueLabel = '未排期';
-    let dueClass = 'bg-secondary text-light';
+    let dueClass = 'review-chip-muted';
     if (nextMs) {
       const diffMs = nextMs - now;
       const diffDays = diffMs / 86400000;
       if (diffMs < -3600000) {
         dueLabel = `逾期 ${Math.abs(diffDays).toFixed(1)} 天`;
-        dueClass = 'bg-danger';
+        dueClass = 'review-chip-danger';
       } else if (diffMs < 86400000) {
         dueLabel = '今日复习';
-        dueClass = 'bg-warning text-dark';
+        dueClass = 'review-chip-warning';
       } else if (diffDays < 2.5) {
         dueLabel = '即将复习';
-        dueClass = 'bg-info text-dark';
+        dueClass = 'review-chip-info';
       } else {
         dueLabel = `${diffDays.toFixed(1)} 天后`;
-        dueClass = 'bg-success';
+        dueClass = 'review-chip-success';
       }
     }
     const intervalLabel = state.interval ? `间隔 ${state.interval.toFixed(1)} 天 · 难度系数 ${state.ease.toFixed(2)}` : '尚未安排间隔';
@@ -11310,6 +11426,49 @@ applyDefaultWorkspaceIfNeeded();
     });
   }
 
+  async function patchLearningRecord(record, payload) {
+    if (!record || !record.id) return null;
+    const res = await fetch(appendWorkspaceQuery(`/learn/records/${encodeURIComponent(record.id)}`), {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(withWorkspacePayload(payload || {})),
+    });
+    if (!res.ok) {
+      const text = (await res.text()) || `HTTP ${res.status}`;
+      throw new Error(text);
+    }
+    const data = await res.json();
+    if (data && data.success === false) {
+      throw new Error(data.error || '更新失败');
+    }
+    learningAssistantState.review.initialized = false;
+    return data && data.record ? data.record : null;
+  }
+
+  function mergeActiveRecord(updated) {
+    const active = learningAssistantState.reviewSession.active;
+    if (!active || !active.record) return null;
+    if (updated && updated.id && updated.id !== active.record.id) {
+      return active.record;
+    }
+    if (!updated) return active.record;
+    const merged = Object.assign({}, active.record, updated);
+    merged.review = normalizeReviewState(merged.review || active.record.review);
+    active.record = merged;
+    return merged;
+  }
+
+  function collectActiveReviewContent() {
+    const outputEl = document.getElementById('ai-review-output-edit');
+    const inputEl = document.getElementById('ai-review-input-edit');
+    const contextEl = document.getElementById('ai-review-context-edit');
+    return {
+      output: outputEl ? outputEl.value || '' : '',
+      input: inputEl ? inputEl.value || '' : '',
+      context: contextEl ? contextEl.value || '' : '',
+    };
+  }
+
   function ellipsizeText(text, limit = 160) {
     const raw = (text || '').trim();
     if (raw.length <= limit) return raw;
@@ -11357,6 +11516,8 @@ applyDefaultWorkspaceIfNeeded();
       const card = document.createElement('div');
       card.className = 'card shadow-sm ai-learn-review-item';
       card.dataset.recordId = rec.id || '';
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
       card._record = Object.assign({}, rec, {review: normalizedReview});
       const body = document.createElement('div');
       body.className = 'card-body';
@@ -11368,7 +11529,7 @@ applyDefaultWorkspaceIfNeeded();
       title.textContent = rec.promptName || '临时提示词';
       titleBox.appendChild(title);
       const meta = document.createElement('div');
-      meta.className = 'text-muted small';
+      meta.className = 'text-muted small review-card-meta';
       const savedAt = rec.savedAt ? new Date(rec.savedAt * 1000).toLocaleString() : '';
       const metaParts = [];
       if (savedAt) metaParts.push(savedAt);
@@ -11377,24 +11538,21 @@ applyDefaultWorkspaceIfNeeded();
       meta.textContent = metaParts.join(' · ') || '学习记录';
       titleBox.appendChild(meta);
       header.appendChild(titleBox);
-      const actions = document.createElement('div');
-      actions.className = 'btn-group btn-group-sm';
-      const favActiveClass = rec.favorite ? 'btn btn-primary ai-learn-review-fav active' : 'btn btn-outline-primary ai-learn-review-fav';
-      actions.innerHTML = `
-        <button type="button" class="btn btn-outline-primary ai-learn-review-open">复习</button>
-        <button type="button" class="${favActiveClass}" data-fav="${rec.favorite ? '1' : '0'}">${rec.favorite ? '取消收藏' : '收藏'}</button>
-        <button type="button" class="btn btn-outline-danger ai-learn-review-delete">删除</button>
-      `;
-      header.appendChild(actions);
+      if (rec.favorite) {
+        const favBadge = document.createElement('span');
+        favBadge.className = 'badge review-badge review-chip review-chip-strong';
+        favBadge.textContent = '已收藏';
+        header.appendChild(favBadge);
+      }
       body.appendChild(header);
       const preview = document.createElement('p');
-      preview.className = 'mt-3 mb-2 text-muted';
+      preview.className = 'mt-3 mb-2 review-card-meta';
       preview.textContent = ellipsizeText(rec.output || '', 280);
       body.appendChild(preview);
       const scheduleRow = document.createElement('div');
       scheduleRow.className = 'd-flex flex-wrap align-items-center gap-2 text-muted small';
       const badge = document.createElement('span');
-      badge.className = `badge ${schedule.dueClass} review-badge`;
+      badge.className = `badge review-badge review-chip ${schedule.dueClass}`;
       badge.textContent = schedule.dueLabel;
       scheduleRow.appendChild(badge);
       const interval = document.createElement('span');
@@ -11412,19 +11570,17 @@ applyDefaultWorkspaceIfNeeded();
   }
 
   function handleLearningReviewClick(event) {
-    const target = event.target;
-    const card = target.closest('.ai-learn-review-item');
+    const card = event.target.closest('.ai-learn-review-item');
     if (!card || !card._record) return;
-    const record = card._record;
-    if (target.closest('.ai-learn-review-open')) {
-      openLearningReviewSession(record);
-    } else if (target.closest('.ai-learn-review-fav')) {
-      toggleLearningRecordFavorite(record, !record.favorite);
-    } else if (target.closest('.ai-learn-review-delete')) {
-      if (confirm('确定要删除这条学习记录吗？')) {
-        deleteLearningRecord(record);
-      }
-    }
+    openLearningReviewSession(card._record);
+  }
+
+  function handleLearningReviewKeydown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const card = event.target.closest('.ai-learn-review-item');
+    if (!card || !card._record) return;
+    event.preventDefault();
+    openLearningReviewSession(card._record);
   }
 
   function setReviewBadge(id, text, extraClass = '') {
@@ -11432,7 +11588,9 @@ applyDefaultWorkspaceIfNeeded();
     if (!el) return;
     if (text) {
       el.textContent = text;
-      el.className = `badge review-badge ${extraClass}`.trim();
+      const classes = ['badge', 'review-badge', 'review-chip'];
+      if (extraClass) classes.push(extraClass);
+      el.className = classes.join(' ').trim();
       el.classList.remove('d-none');
     } else {
       el.classList.add('d-none');
@@ -11461,24 +11619,24 @@ applyDefaultWorkspaceIfNeeded();
       if (savedAt) parts.push(savedAt);
       metaEl.textContent = parts.join(' · ') || '复习卡片';
     }
-    setReviewBadge('ai-review-category-badge', record.category, 'bg-primary-subtle text-primary');
-    setReviewBadge('ai-review-method-badge', record.method, 'bg-secondary-subtle text-secondary');
+    setReviewBadge('ai-review-category-badge', record.category, 'review-chip-info');
+    setReviewBadge('ai-review-method-badge', record.method, 'review-chip-muted');
     setReviewBadge('ai-review-due-badge', summary.dueLabel, summary.dueClass);
-    setReviewBadge('ai-review-status-badge', record.favorite ? '已收藏，长期保留' : '', record.favorite ? 'bg-primary-subtle text-primary' : '');
+    setReviewBadge('ai-review-status-badge', record.favorite ? '已收藏，长期保留' : '', record.favorite ? 'review-chip-strong' : 'review-chip-muted');
     const lastChoiceLabel = review.lastRating ? `上次选择：${reviewRatingLabel(review.lastRating)}` : '首次复习';
-    const lastChoiceClass = review.lastRating ? 'bg-dark-subtle text-body' : 'bg-secondary-subtle text-secondary';
+    const lastChoiceClass = 'review-chip-muted';
     setReviewBadge('ai-review-last-badge', lastChoiceLabel, lastChoiceClass);
-    const outputEl = document.getElementById('ai-review-output');
+    const outputEl = document.getElementById('ai-review-output-edit');
     if (outputEl) {
-      outputEl.textContent = record.output || '（暂无学习结果）';
+      outputEl.value = record.output || '';
     }
-    const inputEl = document.getElementById('ai-review-input');
+    const inputEl = document.getElementById('ai-review-input-edit');
     if (inputEl) {
-      inputEl.textContent = record.input || '（未保存原始输入）';
+      inputEl.value = record.input || '';
     }
-    const contextEl = document.getElementById('ai-review-context');
+    const contextEl = document.getElementById('ai-review-context-edit');
     if (contextEl) {
-      contextEl.textContent = record.context || '（未保存上下文）';
+      contextEl.value = record.context || '';
     }
     const noteEl = document.getElementById('ai-review-note');
     if (noteEl) {
@@ -11498,6 +11656,12 @@ applyDefaultWorkspaceIfNeeded();
     if (footEl) footEl.textContent = '记忆状态会立即保存并安排下一次复习';
     const sessionBadge = document.getElementById('ai-review-session-status');
     if (sessionBadge) sessionBadge.classList.add('d-none');
+    const favToggle = document.getElementById('ai-review-toggle-fav');
+    if (favToggle) {
+      favToggle.textContent = record.favorite ? '取消收藏' : '收藏';
+      favToggle.classList.toggle('btn-primary', !!record.favorite);
+      favToggle.classList.toggle('btn-outline-primary', !record.favorite);
+    }
     toggleReviewButtons(false);
   }
 
@@ -11518,29 +11682,30 @@ applyDefaultWorkspaceIfNeeded();
       if (typeof categoryVal === 'string') {
         payload.category = categoryVal;
       }
-      const res = await fetch(appendWorkspaceQuery(`/learn/records/${encodeURIComponent(record.id)}`), {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(withWorkspacePayload(payload)),
-      });
-      if (!res.ok) {
-        const text = (await res.text()) || `HTTP ${res.status}`;
-        throw new Error(text);
-      }
-      const data = await res.json();
-      if (data && data.success === false) {
-        throw new Error(data.error || '保存失败');
-      }
-      if (data && data.record && typeof data.record === 'object' && 'review' in data.record) {
-        record.review = normalizeReviewState(data.record.review);
-        if (typeof data.record.category === 'string') {
-          record.category = data.record.category;
+      const updated = await patchLearningRecord(record, payload);
+      if (updated && typeof updated === 'object') {
+        if ('review' in updated) {
+          record.review = normalizeReviewState(updated.review);
+        } else {
+          record.review = normalizeReviewState(reviewState);
+        }
+        if (typeof updated.category === 'string') {
+          record.category = updated.category;
+        } else if (typeof categoryVal === 'string') {
+          record.category = categoryVal;
+        }
+        if (typeof updated.input === 'string') {
+          record.input = updated.input;
+        }
+        if (typeof updated.output === 'string') {
+          record.output = updated.output;
+        }
+      } else {
+        record.review = normalizeReviewState(reviewState);
+        if (typeof categoryVal === 'string') {
+          record.category = categoryVal;
         }
       }
-      if (typeof categoryVal === 'string') {
-        record.category = categoryVal;
-      }
-      learningAssistantState.review.initialized = false;
       if (!silent) {
         showStatus('复习进度已保存', 'success', 2400);
       }
@@ -11569,6 +11734,30 @@ applyDefaultWorkspaceIfNeeded();
       renderLearningReviewSession(active.record);
       loadLearningReviewData(true);
       showStatus('已保存复习笔记', 'success', 2000);
+    }
+  }
+
+  async function saveReviewContentOnly(options = {}) {
+    const active = learningAssistantState.reviewSession.active;
+    if (!active || !active.record) return;
+    const payload = collectActiveReviewContent();
+    try {
+      const updated = await patchLearningRecord(active.record, payload);
+      if (updated) {
+        mergeActiveRecord(updated);
+      } else {
+        mergeActiveRecord(payload);
+      }
+      renderLearningReviewSession(active.record);
+      await loadLearningReviewData(true);
+      if (!options.silent) {
+        showStatus('已保存问答内容', 'success', 2200);
+      }
+    } catch (err) {
+      console.error('保存问答内容失败:', err);
+      if (!options.silent) {
+        showStatus('保存问答内容失败：' + (err?.message || err || '未知错误'), 'danger', 6000);
+      }
     }
   }
 
@@ -11607,12 +11796,17 @@ applyDefaultWorkspaceIfNeeded();
     const categoryVal = categoryEl ? categoryEl.value.trim() : '';
     review.effect = REVIEW_RATING_EFFECT[rating] || REVIEW_DEFAULT_STATE.effect;
     const nextState = computeNextReviewState(review, rating);
+    const contentPayload = collectActiveReviewContent();
+    const payload = Object.assign({}, contentPayload, {review: nextState, category: categoryVal});
     learningAssistantState.reviewSession.locked = true;
     toggleReviewButtons(true);
-    const ok = await persistReviewState(active.record, nextState, {category: categoryVal});
-    if (ok) {
-      active.record.review = nextState;
-      active.record.category = categoryVal;
+    try {
+      const updated = await patchLearningRecord(active.record, payload);
+      if (updated) {
+        mergeActiveRecord(updated);
+      } else {
+        mergeActiveRecord(Object.assign({}, payload, {review: nextState}));
+      }
       await loadLearningReviewData(true);
       const nextRecord = findNextDueRecord(active.record.id);
       const sessionBadge = document.getElementById('ai-review-session-status');
@@ -11627,15 +11821,17 @@ applyDefaultWorkspaceIfNeeded();
         if (modal) modal.hide();
         showStatus('本次复习已记录，暂无到期卡片', 'success', 2400);
       }
-    } else {
+    } catch (err) {
+      console.error('保存复习结果失败:', err);
+      showStatus('保存复习进度失败：' + (err?.message || err || '未知错误'), 'danger', 6000);
       learningAssistantState.reviewSession.locked = false;
       toggleReviewButtons(false);
     }
   }
 
   function copyReviewOutput() {
-    const outputEl = document.getElementById('ai-review-output');
-    const text = outputEl ? (outputEl.textContent || '') : '';
+    const outputEl = document.getElementById('ai-review-output-edit');
+    const text = outputEl ? (outputEl.value || '') : '';
     if (!text.trim()) {
       showStatus('没有可复制的内容', 'warning', 2000);
       return;
@@ -11649,31 +11845,26 @@ applyDefaultWorkspaceIfNeeded();
   }
 
   async function toggleLearningRecordFavorite(record, nextState) {
-    if (!record || !record.id) return;
+    if (!record || !record.id) return false;
     try {
-      const res = await fetch(appendWorkspaceQuery(`/learn/records/${encodeURIComponent(record.id)}`), {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(withWorkspacePayload({favorite: nextState})),
-      });
-      if (!res.ok) {
-        const text = (await res.text()) || `HTTP ${res.status}`;
-        throw new Error(text);
+      const updated = await patchLearningRecord(record, {favorite: nextState});
+      if (updated && typeof updated.favorite === 'boolean') {
+        record.favorite = updated.favorite;
+      } else {
+        record.favorite = !!nextState;
       }
-      const data = await res.json();
-      if (data && data.success === false) {
-        throw new Error(data.error || '更新失败');
-      }
-      record.favorite = nextState;
-      loadLearningReviewData(true);
+      mergeActiveRecord(updated || {favorite: record.favorite});
+      await loadLearningReviewData(true);
+      return true;
     } catch (err) {
       console.error('更新收藏状态失败:', err);
       showStatus('更新收藏状态失败：' + (err?.message || err || '未知错误'), 'danger', 6000);
+      return false;
     }
   }
 
   async function deleteLearningRecord(record) {
-    if (!record || !record.id) return;
+    if (!record || !record.id) return false;
     try {
       const res = await fetch(appendWorkspaceQuery(`/learn/records/${encodeURIComponent(record.id)}`), {
         method: 'DELETE',
@@ -11690,9 +11881,22 @@ applyDefaultWorkspaceIfNeeded();
       }
       showStatus('学习记录已删除', 'success', 2500);
       loadLearningReviewData(true);
+      return true;
     } catch (err) {
       console.error('删除学习记录失败:', err);
       showStatus('删除学习记录失败：' + (err?.message || err || '未知错误'), 'danger', 6000);
+      return false;
+    }
+  }
+
+  async function deleteActiveReviewRecord() {
+    const active = learningAssistantState.reviewSession.active;
+    if (!active || !active.record) return;
+    if (!confirm('确定要删除这条学习记录吗？')) return;
+    const ok = await deleteLearningRecord(active.record);
+    if (ok) {
+      const modal = ensureLearningReviewSessionModal();
+      if (modal) modal.hide();
     }
   }
 
@@ -11940,6 +12144,7 @@ applyDefaultWorkspaceIfNeeded();
   const aiLearnReviewList = document.getElementById('ai-learn-review-list');
   if (aiLearnReviewList) {
     aiLearnReviewList.addEventListener('click', handleLearningReviewClick);
+    aiLearnReviewList.addEventListener('keydown', handleLearningReviewKeydown);
   }
 
   const aiLearnReviewSearch = document.getElementById('ai-learn-review-search');
@@ -11977,6 +12182,11 @@ applyDefaultWorkspaceIfNeeded();
     });
   }
 
+  const aiReviewSaveContent = document.getElementById('ai-review-save-content');
+  if (aiReviewSaveContent) {
+    aiReviewSaveContent.addEventListener('click', () => saveReviewContentOnly());
+  }
+
   const aiReviewSaveNote = document.getElementById('ai-review-save-note');
   if (aiReviewSaveNote) {
     aiReviewSaveNote.addEventListener('click', saveReviewNoteOnly);
@@ -11985,6 +12195,26 @@ applyDefaultWorkspaceIfNeeded();
   const aiReviewCopyOutput = document.getElementById('ai-review-copy-output');
   if (aiReviewCopyOutput) {
     aiReviewCopyOutput.addEventListener('click', copyReviewOutput);
+  }
+
+  const aiReviewToggleFav = document.getElementById('ai-review-toggle-fav');
+  if (aiReviewToggleFav) {
+    aiReviewToggleFav.addEventListener('click', async () => {
+      const active = learningAssistantState.reviewSession.active;
+      if (!active || !active.record) return;
+      const nextState = !active.record.favorite;
+      const ok = await toggleLearningRecordFavorite(active.record, nextState);
+      if (ok) {
+        mergeActiveRecord({favorite: nextState});
+        renderLearningReviewSession(active.record);
+        showStatus(nextState ? '已收藏该卡片' : '已取消收藏', 'success', 2000);
+      }
+    });
+  }
+
+  const aiReviewDelete = document.getElementById('ai-review-delete');
+  if (aiReviewDelete) {
+    aiReviewDelete.addEventListener('click', deleteActiveReviewRecord);
   }
 
   const aiReviewOpenResult = document.getElementById('ai-review-open-result');

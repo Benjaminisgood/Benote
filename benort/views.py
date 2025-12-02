@@ -2356,6 +2356,10 @@ def learn_update_or_delete_record(record_id: str):
         payload["method"] = data.get("method")
     if "category" in data:
         payload["category"] = data.get("category")
+    if "input" in data:
+        payload["input"] = data.get("input")
+    if "context" in data:
+        payload["context"] = data.get("context")
     if "output" in data:
         payload["output"] = data.get("output")
     review_payload = data.get("review")
