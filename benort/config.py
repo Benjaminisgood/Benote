@@ -1169,7 +1169,7 @@ UI_THEME = {
         "preset": (os.environ.get("BENORT_NAVBAR_PRESET") or "modern").strip().lower(),
         "style": _navbar_style,  # uniform | palette
         "variant": _navbar_variant,  # outline | solid
-        "color": (os.environ.get("BENORT_NAVBAR_COLOR") or "primary").strip(),
+        "color": (os.environ.get("BENORT_NAVBAR_COLOR") or "auto").strip(),
         "palette": _navbar_palette,
     },
 }

@@ -839,6 +839,25 @@
     .list-group-item-action:focus {
       background-color: color-mix(in srgb, var(--surface-2) 80%, var(--accent) 20%);
     }
+    .form-control:focus,
+    .form-select:focus,
+    .form-check-input:focus {
+      border-color: color-mix(in srgb, var(--accent-strong, #2563eb) 70%, transparent);
+      box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent, #2563eb) 30%, transparent);
+    }
+    .form-check-input:checked {
+      background-color: var(--accent, #2563eb);
+      border-color: var(--accent-strong, #1d4ed8);
+    }
+    .accordion-button:not(.collapsed) {
+      color: var(--shell-text);
+      background: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+      box-shadow: inset 0 -1px 0 var(--surface-border);
+    }
+    .accordion-button:focus {
+      border-color: color-mix(in srgb, var(--accent-strong) 60%, var(--surface-border));
+      box-shadow: 0 0 0 0.15rem color-mix(in srgb, var(--accent) 28%, transparent);
+    }
     .surface-card {
       background: var(--surface-1);
       border: 1px solid var(--surface-border);
@@ -1695,6 +1714,28 @@
     .review-prompt-toggle {
       border: 1px dashed var(--surface-border);
     }
+    .alert-accent {
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+      border: 1px solid color-mix(in srgb, var(--accent-strong) 35%, transparent);
+      color: var(--shell-text);
+      box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+    body.theme-dark .alert-accent {
+      background: color-mix(in srgb, var(--accent) 16%, var(--surface-1));
+      border-color: color-mix(in srgb, var(--accent-strong) 45%, transparent);
+      box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .ai-learn-review-fav {
+      transition: transform 0.12s ease, box-shadow 0.2s ease;
+    }
+    .ai-learn-review-fav:hover,
+    .ai-learn-review-fav:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+    .ai-learn-review-fav.active {
+      box-shadow: 0 12px 26px color-mix(in srgb, var(--accent-strong) 24%, transparent);
+    }
   </style>
 </head>
 <body class="{% if ui_theme and ui_theme.get('color_mode') == 'dark' %}theme-dark{% endif %}" data-bs-theme="{{ ui_theme.get('color_mode', 'light') if ui_theme else 'light' }}" {% if ui_theme and ui_theme.get('skin') and ui_theme.get('skin') != 'default' %}data-ui-skin="{{ ui_theme.get('skin') }}"{% endif %}>
@@ -1941,7 +1982,7 @@
                   </select>
                 </div>
                 <div class="col-6 col-sm-4 col-lg-2">
-                  <button class="btn btn-success w-100" id="add-bib-btn">AI生成</button>
+                  <button class="btn btn-primary w-100" id="add-bib-btn">AI生成</button>
                 </div>
                 <div class="col-6 col-sm-4 col-lg-2">
                   <button class="btn btn-outline-primary w-100" id="add-url-bib-btn">直接保存</button>
@@ -2229,7 +2270,7 @@
                 <button class="btn btn-sm btn-outline-primary" type="button" id="ai-learn-add-prompt">新增提示词</button>
               </div>
               <div id="ai-learn-custom-prompts" class="d-flex flex-column gap-2 mt-2"></div>
-              <div class="alert alert-info my-3 mb-0">
+              <div class="alert alert-accent my-3 mb-0">
                 可直接填写上方“临时提示词”或点击任意提示词即可开始学习，进度会在后台运行。结果准备就绪后会自动弹窗提醒，你可以在弹窗中立即收藏、分类或应用到页面。
               </div>
             </div>
@@ -2309,7 +2350,7 @@
             </div>
             <div class="modal-footer flex-wrap gap-2">
               <button type="button" class="btn btn-outline-secondary" id="ai-learn-result-copy">复制</button>
-              <button type="button" class="btn btn-outline-success" id="ai-learn-result-apply">一键替换</button>
+              <button type="button" class="btn btn-outline-primary" id="ai-learn-result-apply">一键替换</button>
               <button type="button" class="btn btn-primary" id="ai-learn-result-save">保存记录</button>
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
             </div>
@@ -2350,7 +2391,7 @@
                   <label class="form-check-label" for="ai-learn-review-due">仅看到期</label>
                 </div>
               </div>
-              <div class="alert alert-secondary mt-3 mb-2 py-2 small" id="ai-learn-review-hint">
+              <div class="alert alert-accent mt-3 mb-2 py-2 small" id="ai-learn-review-hint">
                 收藏的学习结果会永久保留，未收藏的会在 30 天后自动清理。点击“复习”将打开顶层复习卡片，可记录笔记并安排下一次复习。
               </div>
               <div id="ai-learn-review-empty" class="text-center text-muted small py-4">暂无学习记录，完成一次 AI 学习后即可在此复盘。</div>
@@ -6162,6 +6203,46 @@ function jumpToPage(targetIdx) {
     });
   }
 
+  function parseCssColorToRgb(color) {
+    if (!color || !document.body) return null;
+    const probe = document.createElement('div');
+    probe.style.color = color;
+    probe.style.display = 'none';
+    document.body.appendChild(probe);
+    const computed = getComputedStyle(probe).color || '';
+    probe.remove();
+    const match = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!match) return null;
+    return match.slice(1, 4).map(val => Number(val));
+  }
+
+  function syncAccentThemeTokens() {
+    const root = document.documentElement;
+    if (!root) return;
+    const styles = getComputedStyle(root);
+    const accent = (styles.getPropertyValue('--accent') || '').trim() || '#2563eb';
+    const accentStrong = (styles.getPropertyValue('--accent-strong') || '').trim() || accent;
+    const shellText = (styles.getPropertyValue('--shell-text') || '').trim() || '#0f172a';
+    const accentRgb = parseCssColorToRgb(accent) || [37, 99, 235];
+    const accentStrongRgb = parseCssColorToRgb(accentStrong) || accentRgb;
+    root.style.setProperty('--bs-primary', accent);
+    root.style.setProperty('--bs-primary-rgb', accentRgb.join(','));
+    root.style.setProperty('--bs-link-color', accent);
+    root.style.setProperty('--bs-link-hover-color', accentStrong);
+    root.style.setProperty('--bs-focus-ring-color', `color-mix(in srgb, ${accent} 45%, transparent)`);
+    root.style.setProperty('--bs-primary-bg-subtle', `color-mix(in srgb, ${accent} 14%, transparent)`);
+    root.style.setProperty('--bs-primary-border-subtle', `color-mix(in srgb, ${accentStrong} 28%, transparent)`);
+    root.style.setProperty('--bs-primary-text-emphasis', accentStrong);
+    root.style.setProperty('--bs-accordion-active-bg', `color-mix(in srgb, ${accent} 16%, transparent)`);
+    root.style.setProperty('--bs-accordion-active-color', shellText);
+    root.style.setProperty('--bs-accordion-btn-focus-border-color', `color-mix(in srgb, ${accentStrong} 65%, transparent)`);
+    root.style.setProperty('--bs-accordion-btn-focus-box-shadow', `0 0 0 0.15rem color-mix(in srgb, ${accent} 30%, transparent)`);
+    root.style.setProperty('--bs-btn-focus-shadow-rgb', accentStrongRgb.join(','));
+    root.style.setProperty('--bs-list-group-active-bg', `color-mix(in srgb, ${accent} 16%, transparent)`);
+    root.style.setProperty('--bs-list-group-active-color', shellText);
+    root.style.setProperty('--bs-list-group-active-border-color', `color-mix(in srgb, ${accentStrong} 45%, transparent)`);
+  }
+
   function applyNavbarTheme() {
     const theme = window.BENORT_UI_THEME || {};
     const config = theme.navbar_buttons || {};
@@ -6176,7 +6257,7 @@ function jumpToPage(targetIdx) {
       paper: ['amber', 'secondary', 'primary'],
       ocean: ['teal', 'info', 'primary'],
       forest: ['emerald', 'teal', 'secondary'],
-      sunset: ['amber', 'danger', 'secondary'],
+      sunset: ['amber', 'primary', 'secondary'],
       slate: ['slate', 'info', 'primary'],
     };
     const skinDefaultColor = {
@@ -6188,9 +6269,16 @@ function jumpToPage(targetIdx) {
       sunset: 'amber',
       slate: 'slate',
     };
-    const paletteFromConfig = Array.isArray(config.palette) ? config.palette.map(c => (c || '').toString().trim().toLowerCase()) : [];
+    const paletteFromConfig = Array.isArray(config.palette)
+      ? config.palette
+          .map(c => (c || '').toString().trim().toLowerCase())
+          .filter(c => c && c !== 'auto' && c !== 'skin' && c !== 'default')
+      : [];
     const palette = paletteFromConfig.length ? paletteFromConfig : (skinDefaultPalette[skin] || ['primary', 'secondary']);
-    const uniformColor = (config.color || skinDefaultColor[skin] || palette[0] || 'primary').toLowerCase();
+    const rawUniformColor = (config.color || skinDefaultColor[skin] || palette[0] || 'primary').toString().trim().toLowerCase();
+    const uniformColor = ['auto', 'skin', 'default'].includes(rawUniformColor)
+      ? (skinDefaultColor[skin] || palette[0] || 'primary')
+      : rawUniformColor;
     const paletteLight = {
       primary: { bg: '#2563eb', hover: '#1d4ed8', text: '#ffffff', border: '#1d4ed8', outlineHover: 'rgba(37, 99, 235, 0.12)' },
       success: { bg: '#16a34a', hover: '#15803d', text: '#ffffff', border: '#15803d', outlineHover: 'rgba(34, 197, 94, 0.12)' },
@@ -6272,6 +6360,7 @@ function jumpToPage(targetIdx) {
     }
     window.BENORT_UI_THEME = window.BENORT_UI_THEME || {};
     window.BENORT_UI_THEME.color_mode = normalized;
+    syncAccentThemeTokens();
     applyNavbarTheme();
     window.applyBenortColorMode = applyColorMode;
   }
@@ -6390,6 +6479,7 @@ function jumpToPage(targetIdx) {
     } else {
       document.body.setAttribute('data-ui-skin', skin);
     }
+    syncAccentThemeTokens();
     const ratio = UI_PANE_RATIOS[merged.paneRatio] || UI_PANE_RATIOS.balanced;
     document.documentElement.style.setProperty('--editor-preview-weight', ratio.editor);
     document.documentElement.style.setProperty('--script-pane-weight', ratio.script);
@@ -6407,11 +6497,18 @@ function jumpToPage(targetIdx) {
     window.BENORT_UI_THEME.color_mode = resolvedColorMode;
     window.BENORT_UI_THEME.pane_ratio = merged.paneRatio;
     window.BENORT_UI_THEME.paneRatio = merged.paneRatio;
+    const envNavbarColor = (envNavbar.color || '').toString().trim();
+    const navbarColor = ['auto', 'skin', 'default', ''].includes(envNavbarColor.toLowerCase())
+      ? (UI_SKIN_PRIMARY[skin] || 'primary')
+      : envNavbarColor;
+    const navbarPalette = Array.isArray(envNavbar.palette)
+      ? envNavbar.palette.filter(c => !!c && c.toString().trim().toLowerCase() !== 'auto')
+      : [];
     window.BENORT_UI_THEME.navbar_buttons = {
       style: (envNavbar.style || 'uniform').toLowerCase() === 'palette' ? 'palette' : 'uniform',
       variant: (envNavbar.variant || 'outline').toLowerCase() === 'solid' ? 'solid' : 'outline',
-      color: (envNavbar.color || UI_SKIN_PRIMARY[skin] || 'primary'),
-      palette: Array.isArray(envNavbar.palette) && envNavbar.palette.length ? envNavbar.palette : undefined,
+      color: navbarColor,
+      palette: navbarPalette.length ? navbarPalette : undefined,
       preset: envNavbar.preset || 'modern',
     };
     if (persist) {
@@ -10819,9 +10916,10 @@ applyDefaultWorkspaceIfNeeded();
       header.appendChild(titleBox);
       const actions = document.createElement('div');
       actions.className = 'btn-group btn-group-sm';
+      const favActiveClass = rec.favorite ? 'btn btn-primary ai-learn-review-fav active' : 'btn btn-outline-primary ai-learn-review-fav';
       actions.innerHTML = `
         <button type="button" class="btn btn-outline-primary ai-learn-review-open">复习</button>
-        <button type="button" class="btn btn-outline-success ai-learn-review-fav">${rec.favorite ? '取消收藏' : '收藏'}</button>
+        <button type="button" class="${favActiveClass}" data-fav="${rec.favorite ? '1' : '0'}">${rec.favorite ? '取消收藏' : '收藏'}</button>
         <button type="button" class="btn btn-outline-danger ai-learn-review-delete">删除</button>
       `;
       header.appendChild(actions);
@@ -10903,7 +11001,7 @@ applyDefaultWorkspaceIfNeeded();
     setReviewBadge('ai-review-category-badge', record.category, 'bg-primary-subtle text-primary');
     setReviewBadge('ai-review-method-badge', record.method, 'bg-secondary-subtle text-secondary');
     setReviewBadge('ai-review-due-badge', summary.dueLabel, summary.dueClass);
-    setReviewBadge('ai-review-status-badge', record.favorite ? '已收藏，长期保留' : '', record.favorite ? 'bg-success-subtle text-success' : '');
+    setReviewBadge('ai-review-status-badge', record.favorite ? '已收藏，长期保留' : '', record.favorite ? 'bg-primary-subtle text-primary' : '');
     const lastChoiceLabel = review.lastRating ? `上次选择：${reviewRatingLabel(review.lastRating)}` : '首次复习';
     const lastChoiceClass = review.lastRating ? 'bg-dark-subtle text-body' : 'bg-secondary-subtle text-secondary';
     setReviewBadge('ai-review-last-badge', lastChoiceLabel, lastChoiceClass);
