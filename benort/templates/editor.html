@@ -4031,6 +4031,11 @@ function jumpToPage(targetIdx) {
   let selectedTemplateName = { latex: '', markdown: '' };
   let saveProjectTimer = null;
   let saveRequestQueue = Promise.resolve();
+  let saveInFlight = false;
+  let hasLocalChanges = false;
+  const REMOTE_META_POLL_INTERVAL_MS = 45000;
+  let remoteMetaTimer = null;
+  let remoteMetaInFlight = false;
   let pendingSaveCallbacks = [];
   let searchModalInstance = null;
   let searchResultsCache = [];
@@ -4061,6 +4066,7 @@ function jumpToPage(targetIdx) {
   const PROJECT_ENDPOINTS = {
     project: null,
     projectSave: null,
+    projectMeta: null,
   };
   const WORKSPACE_ENDPOINTS = {
     list: buildApiUrl('/workspaces'),
@@ -4321,15 +4327,91 @@ function jumpToPage(targetIdx) {
     return null;
   }
 
+  function hasDirtyLocal(){
+    return hasLocalChanges || !!saveProjectTimer || saveInFlight;
+  }
+
+  function stopRemoteMetaPolling(){
+    if(remoteMetaTimer){
+      clearInterval(remoteMetaTimer);
+      remoteMetaTimer = null;
+    }
+  }
+
+  function startRemoteMetaPolling(){
+    if(!PROJECT_ENDPOINTS.projectMeta || !currentWorkspace || currentWorkspace.mode !== 'cloud'){
+      return;
+    }
+    stopRemoteMetaPolling();
+    remoteMetaTimer = setInterval(runRemoteMetaCheck, REMOTE_META_POLL_INTERVAL_MS);
+  }
+
+  function restartRemoteMetaPolling(){
+    stopRemoteMetaPolling();
+    startRemoteMetaPolling();
+  }
+
+  async function runRemoteMetaCheck(){
+    if(remoteMetaInFlight) return;
+    if(!PROJECT_ENDPOINTS.projectMeta || !currentWorkspace || currentWorkspace.mode !== 'cloud'){
+      return;
+    }
+    if(hasDirtyLocal()){
+      return;
+    }
+    remoteMetaInFlight = true;
+    try{
+      const res = await fetch(PROJECT_ENDPOINTS.projectMeta, { cache: 'no-store' });
+      let data = null;
+      try{
+        data = await res.json();
+      }catch(e){
+        data = null;
+      }
+      if(res.status === 401 || res.status === 423){
+        handleProjectLocked((data && data.error) ? data.error : '');
+        return;
+      }
+      if(!res.ok || !data){
+        return;
+      }
+      const remoteUpdated = normalizeTimestamp(data.updatedAt);
+      const localUpdated = normalizeTimestamp(projectUpdatedAt);
+      if(remoteUpdated !== null && localUpdated !== null && remoteUpdated - localUpdated > 1e-6){
+        showStatus('检测到云端有新版本，正在刷新', 'info', 4000);
+        await loadProject();
+      }
+    }catch(err){
+      console.warn('远程元数据检查失败', err);
+    }finally{
+      remoteMetaInFlight = false;
+    }
+  }
+
+  window.addEventListener('focus', () => {
+    if(!hasDirtyLocal()){
+      runRemoteMetaCheck();
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible' && !hasDirtyLocal()){
+      runRemoteMetaCheck();
+    }
+  });
+
   function updateWorkspaceEndpoints(){
     if(currentWorkspace && currentWorkspace.workspace_id){
       const encoded = encodeURIComponent(currentWorkspace.workspace_id);
       const projectPath = `/workspaces/${encoded}/project`;
+      const projectMetaPath = `/workspaces/${encoded}/project/meta`;
       PROJECT_ENDPOINTS.project = buildApiUrl(projectPath);
       PROJECT_ENDPOINTS.projectSave = PROJECT_ENDPOINTS.project;
+      PROJECT_ENDPOINTS.projectMeta = buildApiUrl(projectMetaPath);
     } else {
       PROJECT_ENDPOINTS.project = null;
       PROJECT_ENDPOINTS.projectSave = null;
+      PROJECT_ENDPOINTS.projectMeta = null;
     }
   }
 
@@ -4370,6 +4452,7 @@ function jumpToPage(targetIdx) {
     projectUpdatedAt = null;
     updateWorkspaceEndpoints();
     updateWorkspaceUi();
+    restartRemoteMetaPolling();
     notifyWorkspaceChangeHandlers();
     if(currentWorkspace){
       persistWorkspacePreference(currentWorkspace);
@@ -9107,6 +9190,7 @@ function syncMarkdownEditorToPreview(container) {
       llm: getLlmPayload(),
       clientUpdatedAt: projectUpdatedAt,
     };
+    saveInFlight = true;
     saveRequestQueue = saveRequestQueue
       .catch(() => {})
       .then(() => fetch(targetEndpoint, {
@@ -9138,6 +9222,7 @@ function syncMarkdownEditorToPreview(container) {
               projectMetadata[currentProject] = Object.assign({}, existingMeta, {updatedAt: projectUpdatedAt});
             }
           }
+          hasLocalChanges = false;
         }
         callbacks.forEach(cb => {
           try {
@@ -9151,10 +9236,14 @@ function syncMarkdownEditorToPreview(container) {
       .catch(err => {
         console.error('保存项目失败:', err);
         showStatus('保存失败：' + (err?.message || '网络错误'), 'danger', 6000);
+      })
+      .finally(() => {
+        saveInFlight = false;
       });
   }
 
   function saveProject(cb) {
+    hasLocalChanges = true;
     if (typeof cb === 'function') {
       pendingSaveCallbacks.push(cb);
     }
@@ -9274,6 +9363,9 @@ function syncMarkdownEditorToPreview(container) {
         resetSearchState();
         applyInitialDeepLinkIfNeeded();
         primeAttachmentUrlIndex({reRender: currentEditMode === 'markdown'});
+        hasLocalChanges = false;
+        saveInFlight = false;
+        restartRemoteMetaPolling();
         if(cb) cb();
       })
       .catch(err => {

@@ -2517,6 +2517,24 @@ def api_workspace_project(workspace_id: str):
     return jsonify(payload)
 
 
+@bp.route("/workspaces/<workspace_id>/project/meta", methods=["GET"])
+def api_workspace_project_meta(workspace_id: str):
+    try:
+        handle = get_workspace(workspace_id)
+    except WorkspaceNotFoundError:
+        return api_error("workspace 未找到", 404)
+    try:
+        package = get_workspace_package(workspace_id)
+    except WorkspaceLockedError:
+        return _workspace_locked_response()
+    except WorkspaceNotFoundError:
+        return api_error("workspace 未找到", 404)
+    meta = package.get_project_meta()
+    meta["locked"] = handle.locked
+    meta["unlocked"] = handle.unlocked
+    return jsonify(meta)
+
+
 @bp.route("/workspaces/<workspace_id>/project", methods=["POST"])
 def api_workspace_project_save(workspace_id: str):
     data = request.get_json(silent=True) or {}

@@ -1383,6 +1383,17 @@ class BenortPackage:
         self._set_meta("project", meta)
         return self.export_project()
 
+    def get_project_meta(self) -> dict[str, Any]:
+        """Return lightweight project metadata (name, updatedAt)."""
+
+        meta = self._get_meta("project", {}) or {}
+        if not isinstance(meta, dict):
+            meta = {}
+        return {
+            "project": meta.get("name") or self.path.stem,
+            "updatedAt": meta.get("updatedAt"),
+        }
+
 
 def create_package(path: str, project_name: Optional[str] = None) -> BenortPackage:
     package = BenortPackage(path)
