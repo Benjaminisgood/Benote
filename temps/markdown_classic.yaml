@@ -1,36 +1,102 @@
 type: markdown
 css: |
+  /* 经典纸感：衬线排版、宽松行距、柔和引用与表格线，只处理文体层级 */
   .md-classic {
-    font-family: "Georgia", "Songti SC", serif;
+    font-family: "Georgia", "Palatino", "Songti SC", serif;
     font-size: 17px;
-    color: #2d3748;
-    line-height: 1.75;
+    line-height: 1.78;
+    color: var(--shell-text, #1f2937);
     max-width: 760px;
     margin: 0 auto;
   }
   .md-classic h1,
-  .md-classic h2 {
-    font-family: "Palatino", "STXinwei", serif;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 2em;
-    margin-bottom: 0.7em;
+  .md-classic h2,
+  .md-classic h3 {
+    font-family: "Palatino", "Times New Roman", "Songti SC", serif;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin: 1.8em 0 0.65em;
   }
+  .md-classic h1 { font-size: 2.1em; }
+  .md-classic h2 { font-size: 1.6em; }
+  .md-classic h3 { font-size: 1.25em; text-transform: uppercase; }
+
+  .md-classic a {
+    color: color-mix(in srgb, var(--accent, #2563eb) 80%, currentColor);
+    text-decoration: underline;
+    text-decoration-thickness: 0.1em;
+    text-underline-offset: 0.18em;
+  }
+
+  .md-classic p {
+    margin: 0 0 1.1em;
+  }
+  .md-classic ul,
+  .md-classic ol {
+    margin: 0 0 1.1em;
+    padding-left: 1.35em;
+  }
+  .md-classic li + li {
+    margin-top: 0.25em;
+  }
+
   .md-classic blockquote {
     font-style: italic;
-    background: #f7fafc;
-    border-left: 6px solid #cbd5e0;
-    padding: 1em 1.4em;
+    border-left: 4px solid color-mix(in srgb, currentColor 28%, transparent);
+    padding: 0.85em 1.15em;
     margin: 1.6em 0;
+    color: color-mix(in srgb, currentColor 80%, transparent);
   }
+
+  .md-classic code {
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 0.96em;
+    padding: 0.1em 0.32em;
+    border-radius: 0.24rem;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+  .md-classic pre {
+    margin: 1.3em 0;
+    padding: 1em 1.1em;
+    border-radius: 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 70%, currentColor 30%);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+    overflow-x: auto;
+  }
+  .md-classic pre code {
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+
   .md-classic table {
-    border-collapse: collapse;
     width: 100%;
-    margin: 1.5em 0;
+    border-collapse: collapse;
+    margin: 1.6em 0;
   }
   .md-classic th,
   .md-classic td {
-    border: 1px solid #cbd5e0;
-    padding: 0.6em 0.8em;
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 75%, currentColor 25%);
+    padding: 0.65em 0.85em;
+  }
+  .md-classic th {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .md-classic hr {
+    border: none;
+    border-top: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 72%, currentColor 28%);
+    margin: 2em 0;
+  }
+
+  .md-classic figure {
+    margin: 1.6rem auto;
+    text-align: center;
+  }
+  .md-classic figcaption {
+    margin-top: 0.55rem;
+    font-size: 0.92rem;
+    color: color-mix(in srgb, currentColor 70%, transparent);
   }
 wrapperClass: md-classic

@@ -1,0 +1,125 @@
+type: markdown
+css: |
+  /* 影册风格：图文主导，留白 + 统一相框，兼容图片/视频预览 */
+  .md-album {
+    font-family: "Inter", "Helvetica Neue", "PingFang SC", system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--shell-text, #0f172a);
+    max-width: 1024px;
+    margin: 0 auto;
+  }
+
+  .md-album h1,
+  .md-album h2,
+  .md-album h3 {
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 1.4em 0 0.6em;
+    letter-spacing: 0.01em;
+  }
+  .md-album h1 { font-size: 2rem; }
+  .md-album h2 { font-size: 1.55rem; }
+  .md-album h3 { font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .md-album a {
+    color: color-mix(in srgb, var(--accent, #2563eb) 82%, currentColor);
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent, #2563eb) 60%, transparent);
+  }
+  .md-album a:hover {
+    color: color-mix(in srgb, var(--accent-strong, #1d4ed8) 88%, currentColor);
+  }
+
+  .md-album p {
+    margin: 0 0 1em;
+  }
+
+  /* 图文排版 */
+  .md-album figure {
+    margin: 1.2rem auto;
+    text-align: center;
+    background: color-mix(in srgb, currentColor 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 70%, currentColor 30%);
+    border-radius: 0.85rem;
+    overflow: hidden;
+    box-shadow: 0 16px 34px color-mix(in srgb, currentColor 14%, transparent);
+  }
+  .md-album figure img,
+  .md-album figure video {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .md-album figure video {
+    background: color-mix(in srgb, currentColor 6%, transparent);
+  }
+  .md-album figcaption {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    color: color-mix(in srgb, currentColor 72%, transparent);
+  }
+
+  /* 网格呈现：为连续媒体添加 .media-grid 容器 */
+  .md-album .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1.2rem 0;
+  }
+  .md-album .media-grid figure {
+    margin: 0;
+  }
+
+  .md-album img,
+  .md-album video {
+    border-radius: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 72%, currentColor 28%);
+    box-shadow: 0 14px 30px color-mix(in srgb, currentColor 12%, transparent);
+    transition: transform 0.18s ease, box-shadow 0.2s ease;
+  }
+  .md-album img:hover,
+  .md-album video:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 44px color-mix(in srgb, currentColor 18%, transparent);
+  }
+
+  /* 列表/代码/引用保持简洁 */
+  .md-album ul,
+  .md-album ol {
+    margin: 0 0 1em;
+    padding-left: 1.2em;
+  }
+  .md-album blockquote {
+    border-left: 3px solid color-mix(in srgb, var(--accent, #2563eb) 72%, currentColor);
+    padding: 0.75em 1em;
+    margin: 1.2em 0;
+    color: color-mix(in srgb, currentColor 82%, transparent);
+  }
+  .md-album code {
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    padding: 0.1em 0.32em;
+    border-radius: 0.24rem;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    font-size: 0.94em;
+  }
+  .md-album pre {
+    margin: 1.1em 0;
+    padding: 0.95em 1em;
+    border-radius: 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 70%, currentColor 30%);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+    overflow-x: auto;
+  }
+  .md-album pre code {
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+
+  .md-album hr {
+    border: none;
+    border-top: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 72%, currentColor 28%);
+    margin: 1.8em 0;
+  }
+wrapperClass: md-album

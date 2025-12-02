@@ -1,37 +1,89 @@
 type: markdown
 css: |
+  /* 极简稿：紧凑字重、简洁列表与按钮式标题，保持透明背景以融入页面 */
   .md-minimal {
-    font-family: "Roboto", "PingFang SC", sans-serif;
-    font-size: 16px;
-    color: #1f2933;
-    line-height: 1.65;
+    font-family: "Inter", "Helvetica Neue", "PingFang SC", system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--shell-text, #111827);
     max-width: 720px;
     margin: 0 auto;
   }
-  .md-minimal h1 {
-    font-size: 2.4rem;
+  .md-minimal h1,
+  .md-minimal h2,
+  .md-minimal h3 {
     font-weight: 700;
-    margin: 2rem 0 1rem;
+    line-height: 1.25;
+    margin: 1.4em 0 0.5em;
   }
-  .md-minimal h2 {
-    font-size: 1.8rem;
-    margin: 1.8rem 0 0.8rem;
+  .md-minimal h1 { font-size: 2rem; }
+  .md-minimal h2 { font-size: 1.5rem; }
+  .md-minimal h3 { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .md-minimal a {
+    color: color-mix(in srgb, var(--accent, #2563eb) 80%, currentColor);
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent, #2563eb) 60%, transparent);
   }
-  .md-minimal ul {
-    list-style-type: square;
-    padding-left: 1.4rem;
+  .md-minimal a:hover {
+    color: color-mix(in srgb, var(--accent-strong, #1d4ed8) 85%, currentColor);
+  }
+
+  .md-minimal p { margin: 0 0 0.9em; }
+  .md-minimal ul,
+  .md-minimal ol {
+    margin: 0 0 1em;
+    padding-left: 1.15em;
+  }
+  .md-minimal li + li { margin-top: 0.2em; }
+
+  .md-minimal blockquote {
+    border-left: 2px solid color-mix(in srgb, var(--accent, #2563eb) 70%, currentColor);
+    padding: 0.65em 0.95em;
+    margin: 1.1em 0;
+    color: color-mix(in srgb, currentColor 78%, transparent);
+  }
+
+  .md-minimal code {
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 0.94em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.22rem;
+    background: color-mix(in srgb, currentColor 10%, transparent);
   }
   .md-minimal pre {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 0.9rem 1rem;
+    margin: 1em 0;
+    padding: 0.85em 0.95em;
+    border-radius: 0.45rem;
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 70%, currentColor 30%);
+    background: transparent;
     overflow-x: auto;
   }
-  .md-minimal code {
-    background: #e2e8f0;
-    color: #1a202c;
-    padding: 0.1em 0.35em;
-    border-radius: 0.3em;
+  .md-minimal pre code {
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+
+  .md-minimal table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2em 0;
+  }
+  .md-minimal th,
+  .md-minimal td {
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 75%, currentColor 25%);
+    padding: 0.55em 0.7em;
+    font-size: 0.95em;
+  }
+  .md-minimal th {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .md-minimal hr {
+    border: none;
+    border-top: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 72%, currentColor 28%);
+    margin: 1.6em 0;
   }
 wrapperClass: md-minimal

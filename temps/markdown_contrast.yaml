@@ -1,0 +1,107 @@
+type: markdown
+css: |
+  /* 高对比技术稿：偏等宽风格、紧凑段落，强调标题与链接，不设置背景 */
+  .md-contrast {
+    font-family: "SFMono-Regular", "Menlo", "JetBrains Mono", "PingFang SC", monospace;
+    font-size: 15.5px;
+    line-height: 1.7;
+    color: var(--shell-text, #0f172a);
+    letter-spacing: 0.01em;
+  }
+  .md-contrast h1,
+  .md-contrast h2,
+  .md-contrast h3 {
+    font-family: "Inter", "Helvetica Neue", "PingFang SC", sans-serif;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 1.4em 0 0.5em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .md-contrast h1 { font-size: 2rem; }
+  .md-contrast h2 { font-size: 1.55rem; }
+  .md-contrast h3 { font-size: 1.25rem; }
+
+  .md-contrast a {
+    color: color-mix(in srgb, var(--accent, #2563eb) 85%, currentColor);
+    text-decoration: none;
+    border-bottom: 1.5px solid color-mix(in srgb, var(--accent-strong, #1d4ed8) 70%, transparent);
+    padding-bottom: 0.05em;
+  }
+  .md-contrast a:hover {
+    color: color-mix(in srgb, var(--accent-strong, #1d4ed8) 92%, currentColor);
+  }
+
+  .md-contrast p,
+  .md-contrast ul,
+  .md-contrast ol {
+    margin: 0 0 1em;
+  }
+  .md-contrast ul,
+  .md-contrast ol {
+    padding-left: 1.15em;
+  }
+
+  .md-contrast blockquote {
+    border-left: 3px solid color-mix(in srgb, var(--accent-strong, #1d4ed8) 75%, currentColor);
+    padding: 0.75em 1em;
+    margin: 1.2em 0;
+    font-style: italic;
+    color: color-mix(in srgb, currentColor 86%, transparent);
+  }
+
+  .md-contrast code {
+    padding: 0.12em 0.35em;
+    border-radius: 0.28rem;
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    font-size: 0.94em;
+  }
+  .md-contrast pre {
+    margin: 1.1em 0;
+    padding: 0.95em 1em;
+    border-radius: 0.6rem;
+    border: 1px dashed color-mix(in srgb, var(--surface-border, #cbd5e1) 70%, currentColor 30%);
+    background: color-mix(in srgb, currentColor 5%, transparent);
+    overflow-x: auto;
+  }
+  .md-contrast pre code {
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+
+  .md-contrast hr {
+    border: none;
+    border-top: 1px dashed color-mix(in srgb, var(--surface-border, #cbd5e1) 70%, currentColor 30%);
+    margin: 1.8em 0;
+  }
+
+  .md-contrast table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.3em 0;
+    font-size: 0.95em;
+  }
+  .md-contrast th,
+  .md-contrast td {
+    border: 1px solid color-mix(in srgb, var(--surface-border, #cbd5e1) 78%, currentColor 22%);
+    padding: 0.55em 0.7em;
+  }
+  .md-contrast th {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+
+  .md-contrast .markdown-callout {
+    border: 1px solid color-mix(in srgb, var(--accent, #2563eb) 38%, currentColor);
+    border-radius: 0.75rem;
+    padding: 0.9rem 1.05rem;
+    margin: 1.1rem 0;
+  }
+  .md-contrast .markdown-callout-title {
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.03em;
+  }
+wrapperClass: md-contrast

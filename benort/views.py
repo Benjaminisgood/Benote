@@ -146,42 +146,101 @@ for _callout_name in ("info", "tip", "warning"):
     )
 
 _DEFAULT_MARKDOWN_EXPORT_STYLE = """
-:root {
-  color-scheme: light dark;
-}
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
 body.markdown-export {
   margin: 0;
-  padding: 48px 24px;
-  background: #0b1120;
-  color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  padding: 36px 18px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   line-height: 1.7;
 }
-body.markdown-export.theme-light {
-  background: #f8fafc;
-  color: #0f172a;
-}
 body.markdown-export .markdown-export-content {
-  max-width: min(960px, 100%);
+  max-width: min(1024px, 100%);
   margin: 0 auto;
 }
-body.markdown-export a {
-  color: #93c5fd;
-  text-decoration: none;
-}
-body.markdown-export.theme-light a {
-  color: #2563eb;
-}
-body.markdown-export a:hover {
-  text-decoration: underline;
-}
-body.markdown-export pre {
-  overflow-x: auto;
-}
-body.markdown-export img {
+body.markdown-export pre { overflow-x: auto; }
+body.markdown-export img,
+body.markdown-export video {
   max-width: 100%;
   height: auto;
 }
+/* 轻量 TOC 控件样式（不干扰模板） */
+.markdown-export-toc-toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 999;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.markdown-export-toc {
+  position: fixed;
+  right: 16px;
+  bottom: 64px;
+  max-height: min(60vh, 480px);
+  width: min(320px, 86vw);
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  box-shadow: 0 16px 36px color-mix(in srgb, currentColor 14%, transparent);
+  display: none;
+}
+.markdown-export-toc.open { display: block; }
+.markdown-export-toc ul { list-style: none; padding-left: 0; margin: 0; }
+.markdown-export-toc li { margin: 4px 0; }
+.markdown-export-toc a {
+  color: inherit;
+  text-decoration: none;
+}
+.markdown-export-toc a:hover { text-decoration: underline; }
+"""
+
+_DEFAULT_MARKDOWN_EXPORT_SCRIPT = """
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const root = document.querySelector('.markdown-export-content');
+  if (!root) return;
+  const headings = Array.from(root.querySelectorAll('h1, h2, h3, h4'));
+  if (!headings.length) return;
+  const slug = text => text.toLowerCase().trim()
+    .replace(/[^\\w\\u4e00-\\u9fa5\\- ]+/g, '')
+    .replace(/\\s+/g, '-')
+    .replace(/-+/g, '-')
+    || 'section';
+  headings.forEach((h, idx) => {
+    if (!h.id) {
+      h.id = `${slug(h.textContent || 'section')}-${idx + 1}`;
+    }
+  });
+  const toggle = document.createElement('button');
+  toggle.className = 'markdown-export-toc-toggle';
+  toggle.type = 'button';
+  toggle.textContent = '目录';
+  const panel = document.createElement('div');
+  panel.className = 'markdown-export-toc';
+  const list = document.createElement('ul');
+  headings.forEach(h => {
+    const li = document.createElement('li');
+    li.style.paddingLeft = `${(parseInt(h.tagName.substring(1), 10) - 1) * 12}px`;
+    const a = document.createElement('a');
+    a.href = `#${h.id}`;
+    a.textContent = h.textContent || h.id;
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+  panel.appendChild(list);
+  toggle.addEventListener('click', () => panel.classList.toggle('open'));
+  document.body.append(toggle, panel);
+});
+</script>
 """
 
 _DEFAULT_MATHJAX_EXPORT_SNIPPET = """<script>
@@ -1700,6 +1759,7 @@ def _build_markdown_export_html(
   <div class="{wrapper_class_attr}">
 {body_html}
   </div>
+  {_DEFAULT_MARKDOWN_EXPORT_SCRIPT}
   </body>
 </html>
 """
