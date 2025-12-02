@@ -779,6 +779,11 @@
       color: #e2e8f0;
       border-color: rgba(148, 163, 184, 0.35);
     }
+    .ai-learn-result-area {
+      max-height: 48vh;
+      overflow: auto;
+      resize: vertical;
+    }
     .ai-assistant-context-toggle {
       font-size: 0.9rem;
     }
@@ -2796,8 +2801,12 @@
             </div>
             <div class="modal-body">
               <div class="mb-3">
+                <label for="ai-learn-result-input" class="form-label">问题 / 输入</label>
+                <textarea id="ai-learn-result-input" class="form-control ai-learn-result-area" rows="6" placeholder="生成本次结果时的原始提问或选中内容，可在此修改"></textarea>
+              </div>
+              <div class="mb-3">
                 <label for="ai-learn-result-text" class="form-label">学习结果</label>
-                <textarea id="ai-learn-result-text" class="form-control" rows="14"></textarea>
+                <textarea id="ai-learn-result-text" class="form-control ai-learn-result-area" rows="14" placeholder="可编辑学习结果"></textarea>
               </div>
               <div class="row g-3 align-items-end">
                 <div class="col-md-4">
@@ -10557,6 +10566,10 @@ applyDefaultWorkspaceIfNeeded();
       payload,
       {method: resolvedMethod}
     );
+    const inputEl = document.getElementById('ai-learn-result-input');
+    if (inputEl) {
+      inputEl.value = payload.content || payload.input || '';
+    }
     const textarea = document.getElementById('ai-learn-result-text');
     if (textarea) {
       textarea.value = payload.result || payload.output || '';
@@ -10918,6 +10931,7 @@ applyDefaultWorkspaceIfNeeded();
   }
 
   function gatherLearningResultFormValues() {
+    const inputEl = document.getElementById('ai-learn-result-input');
     const textarea = document.getElementById('ai-learn-result-text');
     const methodInput = document.getElementById('ai-learn-result-method');
     const categoryInput = document.getElementById('ai-learn-result-category');
@@ -10925,6 +10939,7 @@ applyDefaultWorkspaceIfNeeded();
     const promptFallback = (learningAssistantState.activeResult && learningAssistantState.activeResult.promptName) || '';
     const methodRaw = methodInput ? methodInput.value.trim() : '';
     return {
+      input: inputEl ? inputEl.value.trim() : '',
       output: textarea ? textarea.value.trim() : '',
       method: methodRaw || promptFallback,
       category: categoryInput ? categoryInput.value.trim() : '',
@@ -11072,7 +11087,11 @@ applyDefaultWorkspaceIfNeeded();
       alert('当前没有学习结果可保存');
       return;
     }
-    const {output, method, category, favorite} = gatherLearningResultFormValues();
+    const {input, output, method, category, favorite} = gatherLearningResultFormValues();
+    if (!input) {
+      alert('请先填写问题或输入内容');
+      return;
+    }
     if (!output) {
       alert('请先填写要保存的学习结果文本');
       return;
@@ -11082,8 +11101,10 @@ applyDefaultWorkspaceIfNeeded();
       button.textContent = state.recordId ? '更新中...' : '保存中...';
     }
     try {
+      state.content = input;
       if (state.recordId) {
         const body = withWorkspacePayload({
+          input,
           method,
           category,
           favorite,

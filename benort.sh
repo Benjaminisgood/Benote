@@ -98,7 +98,8 @@ case "${1:-}" in
       echo "⚠️ Flask 已经在运行 (PID=$(cat $PID_FILE))"
     else
       echo "🚀 启动 Flask..."
-      nohup gunicorn -w 4 -b 0.0.0.0:5004 benort:app > "$LOG_FILE" 2>&1 &
+      # 延长 Gunicorn worker 超时时间，避免外部 LLM 请求耗时过长被提前杀掉
+      nohup gunicorn --timeout 120 -w 4 -b 0.0.0.0:5004 benort:app > "$LOG_FILE" 2>&1 &
       echo $! > "$PID_FILE"
       sleep 2
 
