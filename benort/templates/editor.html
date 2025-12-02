@@ -49,13 +49,13 @@
       --preview-table-bg: color-mix(in srgb, var(--surface-2) 92%, #000 4%);
       --preview-table-head: color-mix(in srgb, var(--surface-2) 80%, var(--accent) 10%);
       --preview-table-row: color-mix(in srgb, var(--surface-2) 86%, var(--accent) 6%);
-      --btn-chrome-bg: var(--surface-2); /* 按钮底色 = 输入框底色（随明暗/皮肤变化） */
-      --btn-chrome-border: var(--surface-border); /* 按钮边框 = 输入框边框 */
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 82%, var(--accent) 18%); /* 按钮底色带一点主题色，减少灰块感 */
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 82%, var(--accent-strong) 18%); /* 边框轻微染色以贴合皮肤色 */
       --btn-chrome-text: var(--shell-text); /* 文本色跟随整体文字 */
-      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 88%, var(--accent) 12%); /* 悬停轻微染色 */
-      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 82%, var(--accent-strong) 18%); /* 按下稍强提示 */
-      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 88%, var(--accent-strong) 12%);
-      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 82%, var(--accent-strong) 18%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 68%, var(--accent) 32%); /* 悬停时更明显的主题色 */
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 54%, var(--accent-strong) 46%); /* 按下时保持浓度但不突兀 */
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 68%, var(--accent-strong) 32%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 54%, var(--accent-strong) 46%);
       --btn-chrome-shadow: none; /* 去除阴影，保持平 */
     }
     /* Skin + mode tokens 用带 data-ui-skin 和 data-bs-theme 的属性选择器，按皮肤/明暗覆盖上面的变量值 */
@@ -77,6 +77,12 @@
       --preview-table-bg: rgba(244, 247, 255, 0.95);
       --preview-table-head: rgba(224, 231, 255, 0.92);
       --preview-table-row: rgba(234, 240, 255, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 72%, var(--accent) 28%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 65%, var(--accent-strong) 35%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 54%, var(--accent) 46%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 42%, var(--accent-strong) 58%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 52%, var(--accent-strong) 48%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 40%, var(--accent-strong) 60%);
     }
     body[data-ui-skin="default"][data-bs-theme="dark"],
     body:not([data-ui-skin])[data-bs-theme="dark"] {
@@ -96,6 +102,12 @@
       --preview-table-bg: rgba(20, 30, 52, 0.92);
       --preview-table-head: rgba(28, 43, 73, 0.96);
       --preview-table-row: rgba(26, 40, 68, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 68%, var(--accent) 32%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 60%, var(--accent-strong) 40%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 50%, var(--accent) 50%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 38%, var(--accent-strong) 62%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 48%, var(--accent-strong) 52%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 38%, var(--accent-strong) 62%);
     }
     body[data-ui-skin="pastel"][data-bs-theme="light"] {
       --shell-bg: #fff1f5;
@@ -114,6 +126,12 @@
       --preview-table-bg: rgba(255, 235, 247, 0.94);
       --preview-table-head: rgba(255, 225, 241, 0.94);
       --preview-table-row: rgba(255, 232, 244, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 70%, var(--accent) 30%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 62%, var(--accent-strong) 38%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 52%, var(--accent) 48%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 40%, var(--accent-strong) 60%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 48%, var(--accent-strong) 52%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 40%, var(--accent-strong) 60%);
     }
     body[data-ui-skin="pastel"][data-bs-theme="dark"] {
       --shell-bg: #2b1021;
@@ -132,6 +150,12 @@
       --preview-table-bg: rgba(48, 20, 37, 0.92);
       --preview-table-head: rgba(68, 28, 50, 0.94);
       --preview-table-row: rgba(60, 24, 45, 0.92);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 66%, var(--accent) 34%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 58%, var(--accent-strong) 42%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 48%, var(--accent) 52%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 36%, var(--accent-strong) 64%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 46%, var(--accent-strong) 54%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 36%, var(--accent-strong) 64%);
     }
     body[data-ui-skin="paper"][data-bs-theme="light"] {
       --shell-bg: #f6f1e9;
@@ -150,6 +174,12 @@
       --preview-table-bg: rgba(250, 244, 233, 0.94);
       --preview-table-head: rgba(248, 231, 202, 0.92);
       --preview-table-row: rgba(248, 235, 214, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 72%, var(--accent) 28%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 64%, var(--accent-strong) 36%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 54%, var(--accent) 46%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 42%, var(--accent-strong) 58%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 50%, var(--accent-strong) 50%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 40%, var(--accent-strong) 60%);
     }
     body[data-ui-skin="paper"][data-bs-theme="dark"] {
       --shell-bg: #2a2117;
@@ -168,6 +198,12 @@
       --preview-table-bg: rgba(48, 38, 26, 0.92);
       --preview-table-head: rgba(70, 54, 36, 0.94);
       --preview-table-row: rgba(60, 46, 30, 0.92);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 68%, var(--accent) 32%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 60%, var(--accent-strong) 40%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 50%, var(--accent) 50%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 38%, var(--accent-strong) 62%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 48%, var(--accent-strong) 52%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 38%, var(--accent-strong) 62%);
     }
     body[data-ui-skin="ocean"][data-bs-theme="light"] {
       --shell-bg: #e0f2fe;
@@ -186,6 +222,12 @@
       --preview-table-bg: rgba(214, 242, 255, 0.94);
       --preview-table-head: rgba(202, 232, 255, 0.92);
       --preview-table-row: rgba(208, 236, 255, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 70%, var(--accent) 30%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 64%, var(--accent-strong) 36%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 52%, var(--accent) 48%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 40%, var(--accent-strong) 60%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 48%, var(--accent-strong) 52%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 38%, var(--accent-strong) 62%);
     }
     body[data-ui-skin="ocean"][data-bs-theme="dark"] {
       --shell-bg: #0f172a;
@@ -204,6 +246,12 @@
       --preview-table-bg: rgba(22, 34, 58, 0.92);
       --preview-table-head: rgba(28, 46, 78, 0.94);
       --preview-table-row: rgba(24, 40, 70, 0.92);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 68%, var(--accent) 32%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 60%, var(--accent-strong) 40%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 50%, var(--accent) 50%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 38%, var(--accent-strong) 62%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 48%, var(--accent-strong) 52%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 38%, var(--accent-strong) 62%);
     }
     body[data-ui-skin="forest"][data-bs-theme="light"] {
       --shell-bg: #e8fff6;
@@ -222,6 +270,12 @@
       --preview-table-bg: rgba(210, 244, 230, 0.94);
       --preview-table-head: rgba(198, 238, 222, 0.92);
       --preview-table-row: rgba(204, 240, 226, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 70%, var(--accent) 30%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 62%, var(--accent-strong) 38%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 52%, var(--accent) 48%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 40%, var(--accent-strong) 60%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 48%, var(--accent-strong) 52%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 40%, var(--accent-strong) 60%);
     }
     body[data-ui-skin="forest"][data-bs-theme="dark"] {
       --shell-bg: #0b1f1a;
@@ -240,6 +294,12 @@
       --preview-table-bg: rgba(20, 48, 38, 0.92);
       --preview-table-head: rgba(28, 64, 50, 0.94);
       --preview-table-row: rgba(24, 56, 44, 0.92);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 66%, var(--accent) 34%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 58%, var(--accent-strong) 42%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 48%, var(--accent) 52%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 36%, var(--accent-strong) 64%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 46%, var(--accent-strong) 54%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 36%, var(--accent-strong) 64%);
     }
     body[data-ui-skin="sunset"][data-bs-theme="light"] {
       --shell-bg: #fff7ed;
@@ -258,6 +318,12 @@
       --preview-table-bg: rgba(254, 229, 210, 0.94);
       --preview-table-head: rgba(252, 220, 194, 0.92);
       --preview-table-row: rgba(253, 225, 202, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 70%, var(--accent) 30%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 62%, var(--accent-strong) 38%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 52%, var(--accent) 48%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 40%, var(--accent-strong) 60%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 48%, var(--accent-strong) 52%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 40%, var(--accent-strong) 60%);
     }
     body[data-ui-skin="sunset"][data-bs-theme="dark"] {
       --shell-bg: #2b1606;
@@ -276,6 +342,12 @@
       --preview-table-bg: rgba(50, 28, 12, 0.92);
       --preview-table-head: rgba(64, 36, 16, 0.94);
       --preview-table-row: rgba(56, 32, 14, 0.92);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 66%, var(--accent) 34%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 58%, var(--accent-strong) 42%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 48%, var(--accent) 52%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 36%, var(--accent-strong) 64%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 46%, var(--accent-strong) 54%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 36%, var(--accent-strong) 64%);
     }
     body[data-ui-skin="slate"][data-bs-theme="light"] {
       --shell-bg: #e2e8f0;
@@ -294,6 +366,12 @@
       --preview-table-bg: rgba(234, 240, 247, 0.94);
       --preview-table-head: rgba(220, 228, 240, 0.92);
       --preview-table-row: rgba(226, 232, 241, 0.9);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 72%, var(--accent) 28%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 64%, var(--accent-strong) 36%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 54%, var(--accent) 46%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 42%, var(--accent-strong) 58%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 50%, var(--accent-strong) 50%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 40%, var(--accent-strong) 60%);
     }
     body[data-ui-skin="slate"][data-bs-theme="dark"] {
       --shell-bg: #0f172a;
@@ -312,6 +390,12 @@
       --preview-table-bg: rgba(22, 31, 50, 0.92);
       --preview-table-head: rgba(34, 45, 68, 0.94);
       --preview-table-row: rgba(28, 39, 60, 0.92);
+      --btn-chrome-bg: color-mix(in srgb, var(--surface-2) 66%, var(--accent) 34%);
+      --btn-chrome-border: color-mix(in srgb, var(--surface-border) 58%, var(--accent-strong) 42%);
+      --btn-chrome-hover-bg: color-mix(in srgb, var(--surface-2) 48%, var(--accent) 52%);
+      --btn-chrome-active-bg: color-mix(in srgb, var(--surface-2) 36%, var(--accent-strong) 64%);
+      --btn-chrome-hover-border: color-mix(in srgb, var(--surface-border) 46%, var(--accent-strong) 54%);
+      --btn-chrome-active-border: color-mix(in srgb, var(--surface-border) 36%, var(--accent-strong) 64%);
     }
     
     
@@ -728,6 +812,41 @@
     }
     body.theme-dark .ai-assistant-context__meta {
       color: #cbd5e1;
+    }
+    .ai-assistant-status {
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: color-mix(in srgb, var(--shell-text) 74%, transparent);
+    }
+    .ai-assistant-status--info,
+    .ai-assistant-status--success {
+      color: color-mix(in srgb, var(--accent) 78%, var(--shell-text) 22%);
+    }
+    .ai-assistant-status--warning {
+      color: color-mix(in srgb, var(--accent-strong) 76%, var(--shell-text) 24%);
+    }
+    .ai-assistant-status--danger {
+      color: color-mix(in srgb, #ef4444 78%, var(--shell-text) 22%);
+    }
+    .ai-assistant-status--secondary {
+      color: color-mix(in srgb, var(--accent-strong) 62%, var(--shell-text) 38%);
+    }
+    .ai-assistant-status--muted {
+      color: color-mix(in srgb, var(--shell-text) 70%, transparent);
+    }
+    #ai-assistant-context-count,
+    .ai-assistant-context-count {
+      background: color-mix(in srgb, var(--accent) 20%, var(--surface-1));
+      color: color-mix(in srgb, var(--accent-strong) 75%, var(--shell-text));
+      border: 1px solid color-mix(in srgb, var(--accent-strong) 40%, var(--surface-border));
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+    body.theme-dark #ai-assistant-context-count,
+    body.theme-dark .ai-assistant-context-count {
+      background: color-mix(in srgb, var(--accent) 26%, var(--surface-2));
+      color: color-mix(in srgb, var(--shell-text) 85%, var(--accent-strong));
+      border-color: color-mix(in srgb, var(--accent-strong) 48%, var(--surface-border));
+      box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 20%, transparent);
     }
     /* 下面这个组合选择器作用于编辑器/讲稿/预览容器，统一设置边框、背景和滚动行为 */
     #editor-container,
@@ -1895,6 +2014,34 @@
       box-shadow: 0 12px 26px color-mix(in srgb, var(--accent-strong) 24%, transparent);
     }
   </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </head>
 <body class="{% if ui_theme and ui_theme.get('color_mode') == 'dark' %}theme-dark{% endif %}" data-bs-theme="{{ ui_theme.get('color_mode', 'light') if ui_theme else 'light' }}" {% if ui_theme and ui_theme.get('skin') and ui_theme.get('skin') != 'default' %}data-ui-skin="{{ ui_theme.get('skin') }}"{% endif %}>
 <div class="modal fade workspace-modal" id="workspaceModal" tabindex="-1" aria-hidden="true">
@@ -2671,7 +2818,7 @@
                   <input class="form-check-input" type="checkbox" id="ai-assistant-page-only" disabled>
                   <label class="form-check-label" for="ai-assistant-page-only">仅当前页 Markdown</label>
                 </div>
-                <div class="text-muted small" id="ai-assistant-status">准备就绪</div>
+                <div class="small ai-assistant-status ai-assistant-status--muted" id="ai-assistant-status">准备就绪</div>
               </div>
               <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -2685,7 +2832,7 @@
               </div>
               <div class="mb-2 d-flex justify-content-between align-items-center">
                 <div class="form-label mb-0">命中的上下文</div>
-                <span class="badge bg-info text-dark" id="ai-assistant-context-count">0</span>
+                <span class="badge ai-assistant-context-count" id="ai-assistant-context-count">0</span>
               </div>
               <div class="text-muted small mb-2">仅索引 Markdown，默认展示最相关的 3 条，其余折叠；若为空则自动回退为普通对话。</div>
               <div id="ai-assistant-contexts"></div>
@@ -3192,6 +3339,31 @@
     </div>
   </div>
 </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/stex/stex.min.js"></script>
@@ -9531,6 +9703,8 @@ applyDefaultWorkspaceIfNeeded();
     ragScope: 'off',
     lastModel: '',
     lastEmbedding: '',
+    modalVisible: false,
+    autoShowOnFinish: false,
   };
 
   function handleLearningProjectSwitch(nextProject, options = {}) {
@@ -10215,6 +10389,14 @@ applyDefaultWorkspaceIfNeeded();
       const modalEl = document.getElementById('aiAssistantModal');
       if (!modalEl) return null;
       aiAssistantState.modal = new bootstrap.Modal(modalEl);
+      modalEl.addEventListener('shown.bs.modal', () => {
+        aiAssistantState.modalVisible = true;
+        aiAssistantState.autoShowOnFinish = false;
+      });
+      modalEl.addEventListener('hidden.bs.modal', () => {
+        aiAssistantState.modalVisible = false;
+        aiAssistantState.autoShowOnFinish = aiAssistantState.running;
+      });
     }
     return aiAssistantState.modal;
   }
@@ -10223,7 +10405,7 @@ applyDefaultWorkspaceIfNeeded();
     const statusEl = document.getElementById('ai-assistant-status');
     if (!statusEl) return;
     statusEl.textContent = text || '';
-    statusEl.className = `text-${variant} small`;
+    statusEl.className = `small ai-assistant-status ai-assistant-status--${variant}`;
   }
 
   function setAssistantMeta(meta = {}) {
@@ -10344,22 +10526,28 @@ applyDefaultWorkspaceIfNeeded();
     const modal = ensureAssistantModal();
     if (!modal) return;
     const messageEl = document.getElementById('ai-assistant-message');
-    if (messageEl && !messageEl.value.trim()) {
+    const isRunning = aiAssistantState.running;
+    if (messageEl && !messageEl.value.trim() && !isRunning) {
       const selection = getLearningSelection();
       if (selection) {
         messageEl.value = selection;
       }
     }
-    aiAssistantState.ragUsed = false;
-    aiAssistantState.ragNotice = '';
-    aiAssistantState.contexts = [];
-    aiAssistantState.lastModel = '';
-    aiAssistantState.lastEmbedding = '';
-    aiAssistantState.ragScope = '';
-    setAssistantStatus('准备就绪', 'muted');
-    renderAssistantContexts([], '开启 RAG 可从 Markdown 中检索上下文。');
-    setAssistantAnswer('');
-    syncAssistantRagScope();
+    if (!isRunning) {
+      aiAssistantState.ragUsed = false;
+      aiAssistantState.ragNotice = '';
+      aiAssistantState.contexts = [];
+      aiAssistantState.lastModel = '';
+      aiAssistantState.lastEmbedding = '';
+      aiAssistantState.ragScope = '';
+      setAssistantStatus('准备就绪', 'muted');
+      renderAssistantContexts([], '开启 RAG 可从 Markdown 中检索上下文。');
+      setAssistantAnswer('');
+      syncAssistantRagScope();
+    } else {
+      setAssistantStatus('处理中，请稍候...', 'secondary');
+    }
+    aiAssistantState.autoShowOnFinish = true;
     modal.show();
   }
 
@@ -10375,6 +10563,7 @@ applyDefaultWorkspaceIfNeeded();
       return;
     }
     aiAssistantState.running = true;
+    aiAssistantState.autoShowOnFinish = true;
     const useRag = useRagEl ? !!useRagEl.checked : true;
     const pageOnly = useRag && pageOnlyEl ? !!pageOnlyEl.checked : false;
     const currentPage = pagesData[currentPageIdx] || {};
@@ -10442,6 +10631,14 @@ applyDefaultWorkspaceIfNeeded();
       showStatus('AI 助理失败：' + (err?.message || err || '未知错误'), 'danger', 6000);
       setAssistantStatus(err?.message || '请求失败', 'danger');
     } finally {
+      const shouldReveal = aiAssistantState.autoShowOnFinish && !aiAssistantState.modalVisible;
+      if (shouldReveal) {
+        const modal = ensureAssistantModal();
+        if (modal) {
+          modal.show();
+        }
+      }
+      aiAssistantState.autoShowOnFinish = false;
       aiAssistantState.running = false;
       if (triggerBtn) {
         triggerBtn.disabled = false;
