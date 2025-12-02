@@ -682,9 +682,9 @@
     .learning-prompt-card {
       position: relative;
       padding: 0.95rem 1.1rem;
-      border: 1px solid rgba(99, 102, 241, 0.18);
+      border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--surface-border));
       border-radius: 0.85rem;
-      background: rgba(255, 255, 255, 0.96);
+      background: color-mix(in srgb, var(--surface-1) 88%, var(--accent) 12%);
       min-width: min(100%, 240px);
       max-width: 100%;
       cursor: pointer;
@@ -692,49 +692,49 @@
     }
     .learning-prompt-card:hover {
       transform: translateY(-1px);
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
-      border-color: rgba(59, 130, 246, 0.35);
+      box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 20%, rgba(15, 23, 42, 0.12));
+      border-color: color-mix(in srgb, var(--accent-strong) 32%, var(--surface-border));
     }
     .learning-prompt-card--stacked {
       width: 100%;
     }
     .learning-prompt-card__title {
       font-weight: 600;
-      color: #111827;
+      color: var(--shell-text);
       margin-bottom: 0.25rem;
     }
     .learning-prompt-card__description {
-      color: #4b5563;
+      color: color-mix(in srgb, var(--shell-text) 78%, transparent);
       font-size: 0.85rem;
       margin-bottom: 0.35rem;
     }
     .learning-prompt-card__meta {
-      color: #6b7280;
+      color: color-mix(in srgb, var(--shell-text) 65%, transparent);
       font-size: 0.75rem;
       letter-spacing: 0.01em;
     }
     body.theme-dark .learning-prompt-card {
-      background: rgba(17, 24, 39, 0.92);
-      border-color: rgba(148, 163, 184, 0.24);
+      background: color-mix(in srgb, var(--surface-1) 82%, var(--accent) 18%);
+      border-color: color-mix(in srgb, var(--accent-strong) 36%, var(--surface-border));
     }
     body.theme-dark .learning-prompt-card__title {
-      color: #e2e8f0;
+      color: var(--shell-text);
     }
     body.theme-dark .learning-prompt-card__description,
     body.theme-dark .learning-prompt-card__meta {
-      color: #cbd5f5;
+      color: color-mix(in srgb, var(--shell-text) 82%, transparent);
     }
     /* .ai-learn-temp-card 组合渐变背景与阴影，常用于展示学习提示 */
     .ai-learn-temp-card {
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      border: 1px solid color-mix(in srgb, var(--accent-strong) 32%, var(--surface-border));
       border-radius: 1rem;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.94));
-      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.16);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--surface-1) 86%, var(--accent) 14%), color-mix(in srgb, var(--surface-1) 80%, var(--accent-strong) 20%));
+      box-shadow: 0 16px 38px color-mix(in srgb, var(--accent) 18%, rgba(15, 23, 42, 0.18));
     }
     body.theme-dark .ai-learn-temp-card {
-      border-color: rgba(71, 85, 105, 0.7);
-      background: radial-gradient(circle at 18% 12%, rgba(30, 41, 59, 0.94), rgba(15, 23, 42, 0.9));
-      box-shadow: 0 18px 44px rgba(8, 47, 73, 0.55);
+      border-color: color-mix(in srgb, var(--accent-strong) 42%, var(--surface-border));
+      background: radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--surface-2) 70%, var(--accent) 30%), color-mix(in srgb, var(--surface-2) 62%, var(--accent-strong) 38%));
+      box-shadow: 0 18px 44px color-mix(in srgb, var(--accent) 22%, rgba(8, 47, 73, 0.6));
       color: #e2e8f0;
     }
     .ai-learn-temp-card h6 {
@@ -750,13 +750,14 @@
     #ai-learn-temp-prompt {
       min-height: 120px;
       font-family: var(--bs-font-monospace);
-      background: rgba(255, 255, 255, 0.92);
-      border-color: rgba(148, 163, 184, 0.6);
+      background: color-mix(in srgb, var(--surface-2) 92%, var(--accent) 8%);
+      border-color: color-mix(in srgb, var(--surface-border) 68%, var(--accent-strong) 32%);
+      color: var(--shell-text);
     }
     body.theme-dark #ai-learn-temp-prompt {
-      background: rgba(17, 24, 39, 0.92);
-      border-color: rgba(71, 85, 105, 0.75);
-      color: #e2e8f0;
+      background: color-mix(in srgb, var(--surface-2) 86%, var(--accent) 14%);
+      border-color: color-mix(in srgb, var(--surface-border) 60%, var(--accent-strong) 40%);
+      color: var(--shell-text);
     }
     .ai-learn-temp-actions .btn {
       min-width: 112px;
@@ -895,6 +896,7 @@
     #tabsModal .modal-content,
     #componentModal .modal-content,
     #templateModal .modal-content,
+    #llmModal .modal-content,
     #llmConfigModal .modal-content,
     #aiScriptModal .modal-content,
     #exportModal .modal-content,
@@ -906,6 +908,25 @@
       background: var(--surface-1);
       color: var(--shell-text);
       border: 1px solid var(--surface-border);
+    }
+    /* 模型配置弹窗的折叠区域与内容底色（随主题） */
+    #llmModal .accordion-item {
+      background: color-mix(in srgb, var(--surface-1) 92%, var(--accent) 8%);
+      border: 1px solid var(--surface-border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    #llmModal .accordion-button {
+      background: color-mix(in srgb, var(--surface-1) 90%, var(--accent) 10%);
+      color: var(--shell-text);
+      border-bottom: 1px solid var(--surface-border);
+      box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--accent) 10%, var(--surface-border));
+    }
+    #llmModal .accordion-body {
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--accent) 12%);
+      border-top: 1px solid color-mix(in srgb, var(--surface-border) 78%, var(--accent) 22%);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--shell-text);
     }
     /* .workspace-form 控制工作区相关表单的统一背景与边框 */
     .workspace-form {
@@ -1025,6 +1046,14 @@
       color: var(--shell-text);
       border-color: var(--surface-border);
     }
+    .list-group-item.active,
+    .list-group-item.active:focus,
+    .list-group-item.active:hover {
+      background: color-mix(in srgb, var(--surface-2) 55%, var(--accent) 45%);
+      border-color: color-mix(in srgb, var(--surface-border) 55%, var(--accent-strong) 45%);
+      color: color-mix(in srgb, var(--shell-text) 88%, var(--accent-strong));
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 22%, transparent);
+    }
     /* hover/focus 状态通过 color-mix 调整背景，使列表项在互动时有高亮 */
     .list-group-item-action:hover,
     .list-group-item-action:focus {
@@ -1036,6 +1065,15 @@
     .form-check-input:focus {
       border-color: color-mix(in srgb, var(--accent-strong, #2563eb) 70%, transparent);
       box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--accent, #2563eb) 30%, transparent);
+    }
+    .form-select option:checked,
+    .form-select option:hover {
+      background-color: color-mix(in srgb, var(--accent) 24%, var(--surface-1)) !important;
+      color: var(--shell-text);
+    }
+    .form-check-input {
+      background-color: color-mix(in srgb, var(--surface-2) 88%, var(--accent) 12%);
+      border-color: var(--surface-border);
     }
     /* 选中状态的复选框/单选按钮直接用 accent 颜色填充 */
     .form-check-input:checked {
@@ -1090,6 +1128,55 @@
       background: color-mix(in srgb, var(--surface-2) 90%, transparent);
       border-color: color-mix(in srgb, var(--accent-strong) 32%, var(--surface-border));
       color: var(--shell-text);
+    }
+    /* 通用主题色标签（资源/附件/状态） */
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.82rem;
+      background: color-mix(in srgb, var(--surface-2) 78%, var(--accent) 22%);
+      border: 1px solid color-mix(in srgb, var(--surface-border) 70%, var(--accent-strong) 30%);
+      color: color-mix(in srgb, var(--accent-strong) 78%, var(--shell-text));
+      box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    body.theme-dark .tag-chip {
+      background: color-mix(in srgb, var(--surface-2) 72%, var(--accent) 28%);
+      border-color: color-mix(in srgb, var(--surface-border) 62%, var(--accent-strong) 38%);
+      color: color-mix(in srgb, var(--shell-text) 86%, var(--accent-strong));
+      box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+    .tag-chip--muted {
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--accent) 12%);
+      border-color: color-mix(in srgb, var(--surface-border) 80%, var(--accent) 20%);
+      color: color-mix(in srgb, var(--shell-text) 82%, var(--accent));
+    }
+    .tag-chip--warning {
+      background: color-mix(in srgb, var(--surface-2) 70%, var(--accent-strong) 30%);
+      border-color: color-mix(in srgb, var(--surface-border) 58%, var(--accent-strong) 42%);
+      color: color-mix(in srgb, var(--shell-text) 82%, var(--accent-strong));
+    }
+    .tag-chip--info {
+      background: color-mix(in srgb, var(--surface-2) 74%, var(--accent) 26%);
+      border-color: color-mix(in srgb, var(--surface-border) 62%, var(--accent-strong) 38%);
+      color: color-mix(in srgb, var(--shell-text) 84%, var(--accent-strong));
+    }
+    /* badge 状态色也用主题混色，覆盖模型配置等场景 */
+    .llm-modal-provider-status.badge,
+    #llm-modal-api-status {
+      background: color-mix(in srgb, var(--accent) 18%, var(--surface-1)) !important;
+      border: 1px solid color-mix(in srgb, var(--accent-strong) 36%, var(--surface-border)) !important;
+      color: color-mix(in srgb, var(--accent-strong) 78%, var(--shell-text)) !important;
+      box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+    body.theme-dark .llm-modal-provider-status.badge,
+    body.theme-dark #llm-modal-api-status {
+      background: color-mix(in srgb, var(--surface-2) 72%, var(--accent) 28%) !important;
+      border-color: color-mix(in srgb, var(--surface-border) 62%, var(--accent-strong) 38%) !important;
+      color: color-mix(in srgb, var(--shell-text) 86%, var(--accent-strong)) !important;
     }
     /* 这里定义状态 Badge 的字体粗细与字间距 */
     .llm-modal-provider-status.badge {
@@ -12557,15 +12644,15 @@ applyDefaultWorkspaceIfNeeded();
     left.appendChild(name);
 
     const badge = document.createElement('span');
-    badge.className = 'badge rounded-pill ms-2';
+    badge.className = 'tag-chip ms-2';
     if(workspaceIsCloud()){
-      badge.classList.add('bg-info');
+      badge.classList.add('tag-chip--info');
       badge.textContent = '云端';
     } else if(hasLocal){
-      badge.classList.add('bg-secondary');
+      badge.classList.add('tag-chip--muted');
       badge.textContent = '本地';
     } else {
-      badge.classList.add('bg-warning', 'text-dark');
+      badge.classList.add('tag-chip--warning');
       badge.textContent = '缺失';
     }
     left.appendChild(badge);
@@ -12587,7 +12674,7 @@ applyDefaultWorkspaceIfNeeded();
 
     if(typeof f.refCount === 'number'){
       const usageBadge = document.createElement('span');
-      usageBadge.className = 'badge rounded-pill ms-2 ' + (f.refCount > 0 ? 'bg-primary' : 'bg-secondary');
+      usageBadge.className = 'tag-chip ms-2 ' + (f.refCount > 0 ? 'tag-chip--info' : 'tag-chip--muted');
       usageBadge.textContent = f.refCount > 0 ? `引用 ${f.refCount}` : '未引用';
       const usagePieces = [];
       if(Array.isArray(f.usedOnPages) && f.usedOnPages.length){
@@ -13139,19 +13226,19 @@ applyDefaultWorkspaceIfNeeded();
       left.appendChild(name);
 
       const locationBadge = document.createElement('span');
-      locationBadge.className = 'badge rounded-pill ms-2';
+      locationBadge.className = 'tag-chip ms-2';
       if(workspaceIsCloud()){
-        locationBadge.classList.add('bg-info');
+        locationBadge.classList.add('tag-chip--info');
         locationBadge.textContent = '云端';
       } else {
-        locationBadge.classList.add('bg-secondary');
+        locationBadge.classList.add('tag-chip--muted');
         locationBadge.textContent = '本地';
       }
       left.appendChild(locationBadge);
 
       if(typeof f.refCount === 'number'){
         const usageBadge = document.createElement('span');
-        usageBadge.className = 'badge rounded-pill ms-2 ' + (f.refCount > 0 ? 'bg-primary' : 'bg-secondary');
+        usageBadge.className = 'tag-chip ms-2 ' + (f.refCount > 0 ? 'tag-chip--info' : 'tag-chip--muted');
         usageBadge.textContent = f.refCount > 0 ? `引用 ${f.refCount}` : '未引用';
         if(Array.isArray(f.references) && f.references.length){
           usageBadge.title = f.references.join('；');
