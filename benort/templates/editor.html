@@ -1924,6 +1924,20 @@
       color: var(--shell-text);
       box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
     }
+    .workspace-badge {
+      background: color-mix(in srgb, var(--surface-2) 72%, var(--accent) 28%);
+      color: color-mix(in srgb, var(--shell-text) 86%, var(--accent-strong));
+      border: 1px solid color-mix(in srgb, var(--surface-border) 64%, var(--accent-strong) 36%);
+      box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 18%, transparent);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    body.theme-dark .workspace-badge {
+      background: color-mix(in srgb, var(--surface-2) 66%, var(--accent) 34%);
+      border-color: color-mix(in srgb, var(--surface-border) 60%, var(--accent-strong) 40%);
+      color: color-mix(in srgb, var(--shell-text) 88%, var(--accent-strong));
+      box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
     /* overlay-status 表示状态文字高度 */
     .workspace-overlay-status {
       min-height: 1.5rem;
@@ -2237,7 +2251,7 @@
         <form id="local-workspace-create-form" class="workspace-form p-3 mb-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0">新建本地工作区</h5>
-            <span class="badge bg-primary">根目录</span>
+            <span class="badge workspace-badge">根目录</span>
           </div>
           <div class="mb-2">
             <label for="local-workspace-create-name" class="form-label small text-muted">文件名（自动追加 <code>.benort</code>）</label>
