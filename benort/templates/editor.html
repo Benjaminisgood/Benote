@@ -1905,6 +1905,7 @@
       overflow-y: auto;
       padding-right: 0.25rem;
       flex: 1;
+      min-height: 0;
     }
     /* 768px 以下让 workspace dialog 占满高度 */
     @media (max-width: 768px) {
@@ -1985,6 +1986,12 @@
       --remote-surface: var(--surface-2);
       --remote-border: var(--surface-border);
     }
+    /* 远程 workspace 弹窗固定高度，内容可滚动 */
+    #remoteWorkspaceModal .modal-dialog {
+      max-width: min(960px, calc(100% - 2rem));
+      margin: 1.5rem auto;
+      height: calc(100% - 3rem);
+    }
     /* 远程 workspace 弹窗内容区域 */
     #remoteWorkspaceModal .modal-content {
       border-radius: 20px;
@@ -1992,6 +1999,8 @@
       background: color-mix(in srgb, var(--surface-1) 94%, var(--accent) 6%);
       box-shadow: var(--surface-shadow);
       color: var(--shell-text);
+      max-height: 100%;
+      overflow-y: auto;
     }
     /* 远程 workspace 表单背景也要跟 surface 保持一致 */
     #remoteWorkspaceModal .workspace-form {
